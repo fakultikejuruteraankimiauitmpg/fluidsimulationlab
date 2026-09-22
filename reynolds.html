@@ -1,0 +1,1830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FM11 — Osborne Reynolds Experiment Simulation</title>
+<style>
+  :root{
+    --bg:#070b14;
+    --panel:#0e1626;
+    --panel2:#0b1322;
+    --line:#1a2740;
+    --txt:#e6edf7;
+    --muted:#8b9ab3;
+    --accent:#3b82f6;
+    --laminar:#22c55e;
+    --trans:#f59e0b;
+    --turb:#ef4444;
+    --dye:#a855f7;
+    --csv:#10b981;
+    --danger:#ef4444;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:radial-gradient(1200px 800px at 18% -12%, #12203a 0%, #070b14 55%) fixed;
+    color:var(--txt);
+    font-family:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",sans-serif;
+    font-size:14px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:12px 22px;border-bottom:1px solid #16233a;
+    background:rgba(10,16,28,.8);backdrop-filter:blur(10px);
+    position:sticky;top:0;z-index:20;
+  }
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand .dot{
+    width:11px;height:11px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 0 4px rgba(59,130,246,.16), 0 0 16px rgba(59,130,246,.8);
+  }
+  .brand h1{margin:0;font-size:16px;font-weight:650;letter-spacing:.2px}
+  .brand p{margin:2px 0 0;font-size:11.5px;color:var(--muted);letter-spacing:.6px;text-transform:uppercase}
+  .pill{font-size:11px;color:var(--muted);border:1px solid var(--line);
+    padding:5px 11px;border-radius:99px;background:#0b1322;white-space:nowrap;
+    font-variant-numeric:tabular-nums}
+
+  .wrap{
+    display:grid;grid-template-columns:minmax(300px,1fr) minmax(380px,480px);
+    gap:18px;padding:18px 22px 30px;align-items:start;
+    max-width:1560px;margin:0 auto;
+  }
+  @media (max-width:1080px){ .wrap{grid-template-columns:1fr;} }
+
+  .stage{
+    position:relative;
+    background:linear-gradient(180deg,#0c1524,#080d18);
+    border:1px solid #16233a;border-radius:16px;
+    height:clamp(560px, calc(100vh - 140px), 860px);
+    overflow:hidden;
+    box-shadow:0 22px 60px -30px #000 inset, 0 10px 40px -20px #000;
+    position:sticky;top:78px;
+  }
+  @media (max-width:1080px){ .stage{position:relative;top:0;} }
+  .stage canvas{display:block;width:100%;height:100%}
+
+  .stage-caption{
+    position:absolute;left:14px;top:12px;
+    background:rgba(8,13,24,.82);border:1px solid var(--line);
+    border-radius:11px;padding:9px 13px;backdrop-filter:blur(7px);
+    max-width:62%;transition:.25s;
+  }
+  .stage-caption b{display:block;font-size:12.5px;letter-spacing:1px;text-transform:uppercase;transition:.25s}
+  .stage-caption span{display:block;font-size:11px;color:var(--muted);margin-top:3px;line-height:1.45}
+  .stage-caption.none b{color:var(--muted)}
+  .stage-caption.laminar b{color:var(--laminar)}
+  .stage-caption.trans b{color:var(--trans)}
+  .stage-caption.turb b{color:var(--turb)}
+  .stage-caption.laminar{border-color:rgba(34,197,94,.45)}
+  .stage-caption.trans{border-color:rgba(245,158,11,.45)}
+  .stage-caption.turb{border-color:rgba(239,68,68,.45)}
+
+  .stage-legend{
+    position:absolute;left:14px;bottom:12px;
+    display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted);
+    background:rgba(8,13,24,.72);border:1px solid var(--line);
+    padding:6px 11px;border-radius:9px;backdrop-filter:blur(6px);
+  }
+  .stage-legend span{display:flex;align-items:center;gap:6px}
+  .sw{width:9px;height:9px;border-radius:2px;display:inline-block}
+  .sw.laminar{background:var(--laminar)}
+  .sw.trans{background:var(--trans)}
+  .sw.turb{background:var(--turb)}
+  .sw.water{background:#3b82f6}
+  .sw.dye{background:var(--dye)}
+
+  .fluid-key{
+    position:absolute;right:14px;bottom:12px;
+    display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted);
+    background:rgba(8,13,24,.72);border:1px solid var(--line);
+    padding:6px 11px;border-radius:9px;backdrop-filter:blur(6px);
+  }
+  .fluid-key span{display:flex;align-items:center;gap:6px}
+
+  .side{display:flex;flex-direction:column;gap:14px}
+  .card{
+    background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border:1px solid var(--line);border-radius:14px;padding:14px 16px 16px;
+  }
+  .card h2{
+    margin:0 0 12px;font-size:11px;font-weight:650;
+    letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+  }
+
+  /* ==================================================
+     ENHANCED CARD-HEADER ACTION BUTTONS (CSV / Clear)
+     ================================================== */
+  .card-actions{
+    display:flex;gap:6px;align-items:center;
+  }
+  .card-btn{
+    display:inline-flex;align-items:center;gap:5px;
+    padding:5px 10px 5px 8px;
+    font-size:11px;font-weight:650;font-family:inherit;
+    letter-spacing:.3px;
+    border-radius:7px;cursor:pointer;
+    transition:background .15s, border-color .15s, transform .1s, box-shadow .2s;
+    border:1px solid;
+    position:relative;
+    overflow:hidden;
+    white-space:nowrap;
+    user-select:none;
+  }
+  .card-btn:active{transform:translateY(1px)}
+  .card-btn svg{width:12px;height:12px;flex-shrink:0;transition:transform .2s}
+  .card-btn:disabled{opacity:.35;cursor:not-allowed}
+  .card-btn:disabled:active{transform:none}
+
+  /* CSV button — emerald */
+  .card-btn.csv{
+    color:#6ee7b7;
+    border-color:rgba(16,185,129,.4);
+    background:rgba(16,185,129,.10);
+  }
+  .card-btn.csv:hover:not(:disabled){
+    color:#a7f3d0;
+    background:rgba(16,185,129,.20);
+    border-color:rgba(16,185,129,.7);
+    box-shadow:0 0 0 3px rgba(16,185,129,.10);
+  }
+  .card-btn.csv:hover:not(:disabled) svg{transform:translateY(1.5px)}
+
+  /* Clear button — subtle red */
+  .card-btn.clear{
+    color:#fca5a5;
+    border-color:rgba(239,68,68,.35);
+    background:rgba(239,68,68,.08);
+  }
+  .card-btn.clear:hover:not(:disabled){
+    color:#fecaca;
+    background:rgba(239,68,68,.18);
+    border-color:rgba(239,68,68,.65);
+    box-shadow:0 0 0 3px rgba(239,68,68,.10);
+  }
+  .card-btn.clear:hover:not(:disabled) svg{transform:rotate(-12deg)}
+
+  /* pulse ring on click */
+  .card-btn::after{
+    content:'';position:absolute;inset:0;border-radius:inherit;
+    background:currentColor;opacity:0;pointer-events:none;
+  }
+  @keyframes ringPulse{
+    0%   {opacity:.35; transform:scale(1)}
+    100% {opacity:0;   transform:scale(1.6)}
+  }
+  .card-btn.pulse::after{animation:ringPulse .45s ease-out}
+
+  /* success checkmark swap on CSV */
+  .card-btn.csv.exported{
+    color:#34d399;
+    border-color:rgba(16,185,129,.9);
+    background:rgba(16,185,129,.22);
+  }
+
+  /* row counter chip */
+  .row-count{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:20px;height:16px;padding:0 6px;
+    font-size:9.5px;font-weight:700;font-variant-numeric:tabular-nums;
+    color:#93c5fd;background:rgba(59,130,246,.14);
+    border:1px solid rgba(59,130,246,.30);
+    border-radius:99px;letter-spacing:.3px;
+    transition:.25s;
+  }
+  .row-count.zero{
+    color:var(--muted);background:rgba(139,154,179,.08);
+    border-color:rgba(139,154,179,.20);
+  }
+  .row-count.bump{animation:countBump .35s ease-out}
+  @keyframes countBump{
+    0%{transform:scale(1)}
+    40%{transform:scale(1.22);color:#fff;background:rgba(59,130,246,.45)}
+    100%{transform:scale(1)}
+  }
+
+  /* ---- analysis panel ---- */
+  .analysis-head{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:10px 12px;border-radius:10px;margin-bottom:12px;
+    border:1px solid var(--line);background:#0a1220;transition:.3s;
+  }
+  .analysis-head.none{border-color:#1a2740}
+  .analysis-head.laminar{border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.06)}
+  .analysis-head.trans{border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.06)}
+  .analysis-head.turb{border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.06)}
+  .analysis-head b{font-size:13px;font-weight:700;letter-spacing:.8px;text-transform:uppercase}
+  .analysis-head.none b{color:var(--muted)}
+  .analysis-head.laminar b{color:var(--laminar)}
+  .analysis-head.trans b{color:var(--trans)}
+  .analysis-head.turb b{color:var(--turb)}
+  .analysis-head small{font-size:10.5px;color:var(--muted);letter-spacing:.4px;font-variant-numeric:tabular-nums}
+
+  .analysis-body p{margin:0 0 10px;font-size:12px;line-height:1.62;color:#c3cfe2}
+  .analysis-body p:last-child{margin-bottom:0}
+  .analysis-body b{color:#e6edf7}
+  .analysis-body em{font-style:normal;color:var(--dye);font-weight:600}
+
+  .obs{display:grid;grid-template-columns:auto 1fr;gap:8px 12px;font-size:11.5px;color:#b9c6da;margin-bottom:12px}
+  .obs span:nth-child(odd){color:var(--muted);white-space:nowrap}
+  .obs span:nth-child(even){color:#e6edf7;font-weight:500}
+
+  .sweep{width:100%;border-collapse:collapse;font-size:11px;font-variant-numeric:tabular-nums}
+  .sweep th{text-align:right;font-weight:600;font-size:9.5px;letter-spacing:.5px;
+    text-transform:uppercase;color:var(--muted);padding:6px 6px;
+    border-bottom:1px solid #1a2740;white-space:nowrap}
+  .sweep th:first-child{text-align:left}
+  .sweep td{padding:6px;text-align:right;border-bottom:1px solid #101a2c;transition:.2s}
+  .sweep td:first-child{text-align:left;color:#a9bad2;font-weight:600}
+  .sweep tr.active td{background:rgba(59,130,246,.10)}
+  .sweep tr.active td:first-child{color:#fff}
+  .sweep .reg{font-weight:600}
+  .sweep .reg.laminar{color:var(--laminar)}
+  .sweep .reg.trans{color:var(--trans)}
+  .sweep .reg.turb{color:var(--turb)}
+  .sweep tr{cursor:pointer}
+  .sweep tr:hover td{background:rgba(255,255,255,.03)}
+
+  .re-top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:6px}
+  .re-num{font-size:40px;font-weight:700;line-height:1;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+  .tag{font-size:11.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+    padding:5px 12px;border-radius:99px;border:1px solid currentColor;transition:.25s}
+  .tag.laminar{color:var(--laminar);background:rgba(34,197,94,.1)}
+  .tag.trans{color:var(--trans);background:rgba(245,158,11,.1)}
+  .tag.turb{color:var(--turb);background:rgba(239,68,68,.1)}
+  .tag.none{color:var(--muted);background:rgba(139,154,179,.08)}
+
+  .gauge{margin:14px 0 4px}
+  .gauge-track{position:relative;height:9px;border-radius:99px;overflow:hidden;display:flex;background:#131e33}
+  .gauge-track .zone{height:100%}
+  .zone.laminar{width:35%;background:linear-gradient(90deg,rgba(34,197,94,.35),rgba(34,197,94,.75))}
+  .zone.trans{width:31.667%;background:linear-gradient(90deg,rgba(245,158,11,.35),rgba(245,158,11,.75))}
+  .zone.turb{width:33.333%;background:linear-gradient(90deg,rgba(239,68,68,.35),rgba(239,68,68,.75))}
+  .marker{position:absolute;top:-4px;width:3px;height:17px;border-radius:2px;
+    background:#fff;box-shadow:0 0 10px rgba(255,255,255,.9);
+    transform:translateX(-50%);left:0%;transition:left .12s linear}
+  .gauge-labels{display:flex;margin-top:6px;font-size:10px;color:var(--muted)}
+  .gauge-labels span:nth-child(1){width:35%}
+  .gauge-labels span:nth-child(2){width:31.667%;text-align:center}
+  .gauge-labels span:nth-child(3){width:33.333%;text-align:right}
+
+  .mini-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}
+  .mini{background:#0a1220;border:1px solid #16233a;border-radius:9px;padding:8px 9px;text-align:center}
+  .mini b{display:block;font-size:13.5px;font-weight:650;font-variant-numeric:tabular-nums}
+  .mini i{display:block;font-style:normal;font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:.4px}
+
+  .scale-note{margin-top:10px;font-size:11px;color:var(--muted);text-align:center;line-height:1.5;
+    padding:7px 9px;border-radius:8px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.18)}
+  .scale-note b{color:#8eb6f5;font-weight:600}
+
+  .pattern-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+  .pattern{border-radius:10px;border:1px solid #16233a;background:#0a1220;
+    padding:6px 6px 7px;transition:.25s;cursor:pointer}
+  .pattern:hover{border-color:#2b3f66}
+  .pattern canvas{display:block;width:100%;height:112px;border-radius:6px}
+  .pattern em{display:block;text-align:center;font-style:normal;font-size:10px;
+    letter-spacing:.5px;text-transform:uppercase;margin-top:6px;color:var(--muted);transition:.25s}
+  .pattern.active.laminar{border-color:rgba(34,197,94,.7);box-shadow:0 0 0 1px rgba(34,197,94,.25),0 0 22px -6px rgba(34,197,94,.5)}
+  .pattern.active.laminar em{color:var(--laminar)}
+  .pattern.active.trans{border-color:rgba(245,158,11,.7);box-shadow:0 0 0 1px rgba(245,158,11,.25),0 0 22px -6px rgba(245,158,11,.5)}
+  .pattern.active.trans em{color:var(--trans)}
+  .pattern.active.turb{border-color:rgba(239,68,68,.7);box-shadow:0 0 0 1px rgba(239,68,68,.25),0 0 22px -6px rgba(239,68,68,.5)}
+  .pattern.active.turb em{color:var(--turb)}
+
+  .ctrl{margin-bottom:16px}
+  .ctrl:last-child{margin-bottom:0}
+  .ctrl-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .ctrl-head label{font-size:12.5px;color:#c3cfe2}
+  .ctrl-head output{font-size:12.5px;font-weight:650;color:var(--accent);font-variant-numeric:tabular-nums}
+
+  input[type=range]{-webkit-appearance:none;appearance:none;
+    width:100%;height:6px;border-radius:99px;background:#182541;outline:none;cursor:pointer}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+    background:var(--accent);border:2px solid #0b1322;cursor:pointer;
+    box-shadow:0 0 0 3px rgba(59,130,246,.22);transition:box-shadow .15s}
+  input[type=range]::-webkit-slider-thumb:hover{box-shadow:0 0 0 5px rgba(59,130,246,.3)}
+  input[type=range]::-moz-range-thumb{width:15px;height:15px;border-radius:50%;background:var(--accent);
+    border:2px solid #0b1322;cursor:pointer}
+
+  input[type=range].accent2::-webkit-slider-thumb{
+    background:var(--dye);box-shadow:0 0 0 3px rgba(168,85,247,.22)}
+  input[type=range].accent2::-webkit-slider-thumb:hover{box-shadow:0 0 0 5px rgba(168,85,247,.3)}
+  input[type=range].accent2::-moz-range-thumb{background:var(--dye)}
+  .ctrl-head output.accent2{color:#c084fc}
+
+  .row{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{flex:1;min-width:86px;background:#152340;border:1px solid #22355a;color:var(--txt);
+    padding:9px 12px;border-radius:9px;font-size:12.5px;font-weight:600;
+    cursor:pointer;transition:.16s;font-family:inherit}
+  .btn:hover{background:#1c2e52;border-color:#2f4877}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:linear-gradient(180deg,#3b82f6,#2563eb);border-color:#2563eb}
+  .btn.primary:hover{background:linear-gradient(180deg,#4f8ff8,#2f6fe0)}
+  .btn.ghost{background:transparent;border-color:#22355a;color:var(--muted)}
+  .btn.ghost:hover{color:var(--txt);background:#131f36}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .btn.on{background:linear-gradient(180deg,#22c55e,#16a34a);border-color:#16a34a}
+  .btn.tiny{flex:0;padding:5px 10px;font-size:11px;min-width:0}
+
+  .dia-row{display:flex;gap:6px;margin-top:8px}
+  .dia-preset{flex:1;padding:6px 4px;font-size:11px;font-weight:600;
+    background:#0f1b2e;border:1px solid #1e2d4a;color:#a9bad2;
+    border-radius:7px;cursor:pointer;transition:.15s;font-family:inherit}
+  .dia-preset:hover{background:#162541;color:var(--txt);border-color:#2f4877}
+  .dia-preset.on{background:rgba(168,85,247,.16);color:#d8b4fe;border-color:rgba(168,85,247,.55)}
+
+  .meas-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+  .meas-vol{display:flex;align-items:center;gap:7px;font-size:12.5px;color:#c3cfe2}
+  .meas-vol input{width:74px;background:#0a1220;border:1px solid #22355a;color:var(--txt);
+    padding:6px 8px;border-radius:8px;font-family:inherit;font-size:12.5px}
+  .timer{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.5px;color:#fff}
+  .bar{height:8px;border-radius:99px;background:#131e33;overflow:hidden;margin:10px 0 8px}
+  .bar span{display:block;height:100%;width:0%;border-radius:99px;
+    background:linear-gradient(90deg,#3b82f6,#60a5fa);transition:width .1s linear}
+  .hint{font-size:11px;color:var(--muted);line-height:1.5}
+
+  .table-wrap{max-height:230px;overflow:auto;border-radius:10px;border:1px solid #16233a}
+  table.data{width:100%;border-collapse:collapse;font-size:11.5px;font-variant-numeric:tabular-nums}
+  table.data thead th{position:sticky;top:0;background:#101c30;color:var(--muted);
+    font-weight:600;font-size:10px;letter-spacing:.6px;text-transform:uppercase;
+    padding:8px 8px;text-align:right;border-bottom:1px solid #1a2740;white-space:nowrap}
+  table.data thead th:first-child{text-align:left}
+  table.data tbody td{padding:7px 8px;text-align:right;border-bottom:1px solid #101a2c;white-space:nowrap}
+  table.data tbody td:first-child{text-align:left;color:var(--muted)}
+  table.data tbody tr:hover{background:#0f1b2e}
+  .dot-regime{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  .empty-row td{text-align:center;color:var(--muted);padding:18px 8px;font-size:11.5px}
+
+  /* empty-state for the table */
+  .empty-state{
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    padding:26px 12px;color:var(--muted);font-size:11.5px;text-align:center;
+  }
+  .empty-state svg{width:26px;height:26px;opacity:.35}
+
+  /* confirmation sheet for Clear */
+  .confirm-bar{
+    display:none;
+    align-items:center;justify-content:space-between;gap:10px;
+    margin-top:10px;padding:8px 10px;border-radius:9px;
+    background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.35);
+    font-size:11.5px;color:#fecaca;
+    animation:slideDown .2s ease-out;
+  }
+  .confirm-bar.show{display:flex}
+  @keyframes slideDown{
+    from{opacity:0;transform:translateY(-6px)}
+    to{opacity:1;transform:translateY(0)}
+  }
+  .confirm-bar b{color:#fff;font-weight:600}
+  .confirm-actions{display:flex;gap:6px;flex-shrink:0}
+  .confirm-btn{
+    padding:4px 11px;font-size:11px;font-weight:650;font-family:inherit;
+    border-radius:6px;cursor:pointer;transition:.15s;border:1px solid;
+  }
+  .confirm-btn.yes{
+    background:rgba(239,68,68,.25);border-color:rgba(239,68,68,.7);color:#fecaca;
+  }
+  .confirm-btn.yes:hover{background:rgba(239,68,68,.45);color:#fff}
+  .confirm-btn.no{
+    background:transparent;border-color:#2f4877;color:var(--muted);
+  }
+  .confirm-btn.no:hover{background:#1c2e52;color:var(--txt)}
+
+  .toast{position:fixed;left:50%;bottom:28px;transform:translate(-50%,20px);
+    background:#152340;border:1px solid #2f4877;color:#fff;
+    padding:10px 18px;border-radius:10px;font-size:12.5px;
+    opacity:0;pointer-events:none;transition:.25s;z-index:50;
+    box-shadow:0 12px 40px -12px #000;
+    display:flex;align-items:center;gap:9px}
+  .toast svg{width:14px;height:14px;flex-shrink:0}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+  .toast.success{border-color:rgba(16,185,129,.6);background:#0d2b23}
+  .toast.success svg{color:#34d399}
+  .toast.warn{border-color:rgba(245,158,11,.6);background:#2b1f0a}
+  .toast.warn svg{color:#fbbf24}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <span class="dot"></span>
+    <div>
+      <h1>Osborne Reynolds Experiment</h1>
+      <p>SOLTEQ® FM11 &mdash; Virtual Laboratory</p>
+    </div>
+  </div>
+  <span class="pill" id="topPill">D = 15.0 mm · ν = 0.891×10⁻⁶ m²/s</span>
+</div>
+
+<div class="wrap">
+
+  <section class="stage">
+    <canvas id="tube"></canvas>
+    <div class="stage-caption none" id="stageCaption">
+      <b>No flow</b>
+      <span>Open the flow control valve to begin the experiment.</span>
+    </div>
+    <div class="stage-legend">
+      <span><i class="sw laminar"></i>Laminar &lt; 2100</span>
+      <span><i class="sw trans"></i>Transitional 2100–4000</span>
+      <span><i class="sw turb"></i>Turbulent &gt; 4000</span>
+    </div>
+    <div class="fluid-key">
+      <span><i class="sw water"></i>Water</span>
+      <span><i class="sw dye"></i>Dye</span>
+    </div>
+  </section>
+
+  <aside class="side">
+
+    <!-- ============ REYNOLDS READOUT ============ -->
+    <div class="card">
+      <h2>Reynolds Number</h2>
+      <div class="re-top">
+        <div class="re-num" id="reValue">0</div>
+        <div class="tag none" id="flowTag">No flow</div>
+      </div>
+      <div class="gauge">
+        <div class="gauge-track">
+          <div class="zone laminar"></div>
+          <div class="zone trans"></div>
+          <div class="zone turb"></div>
+          <div class="marker" id="marker"></div>
+        </div>
+        <div class="gauge-labels"><span>0</span><span>2100</span><span>4000</span><span>6000+</span></div>
+      </div>
+      <div class="mini-grid">
+        <div class="mini"><b id="mQ">0.000</b><i>Q (L/s)</i></div>
+        <div class="mini"><b id="mU">0.0000</b><i>U (m/s)</i></div>
+        <div class="mini"><b id="mD">15.0</b><i>D (mm)</i></div>
+        <div class="mini"><b id="mNu">0.891</b><i>ν (×10⁻⁶ m²/s)</i></div>
+      </div>
+      <div class="scale-note">
+        Re ∝ <b>1/D</b> at constant Q &mdash; widening the tube reduces Reynolds number.
+      </div>
+    </div>
+
+    <!-- ============ LIVE ANALYSIS ============ -->
+    <div class="card">
+      <h2>Region Analysis</h2>
+      <div class="analysis-head none" id="anaHead">
+        <b id="anaTitle">No flow</b>
+        <small id="anaSub">valve 0 % · Re 0</small>
+      </div>
+      <div class="obs">
+        <span>Valve opening</span>   <span id="obsValve">0 %</span>
+        <span>Dye filament</span>    <span id="obsDye">Not visible</span>
+        <span>Mixing</span>          <span id="obsMix">None</span>
+        <span>Typical use</span>     <span id="obsUse">—</span>
+      </div>
+      <div class="analysis-body" id="anaBody">
+        <p>
+          The apparatus is idle. Water is stationary in the observation tube and
+          <em>no dye</em> is being injected. Open the flow control valve to begin.
+        </p>
+      </div>
+    </div>
+
+    <!-- ============ VALVE SWEEP TABLE ============ -->
+    <div class="card">
+      <h2>
+        Valve Opening vs Reynolds
+        <small style="font-size:10px;color:var(--muted);font-weight:400;letter-spacing:.3px;text-transform:none">
+          click a row to jump
+        </small>
+      </h2>
+      <table class="sweep" id="sweepTable">
+        <thead>
+          <tr>
+            <th>Valve</th><th>Q (L/s)</th><th>U (m/s)</th><th>Re</th><th>Regime</th>
+          </tr>
+        </thead>
+        <tbody id="sweepBody"></tbody>
+      </table>
+      <p class="hint" style="margin-top:10px">
+        Values computed for the current tube bore Ø<span id="sweepD">15.0</span> mm at
+        <span id="sweepT">25</span> °C. A wider bore shifts every row downward.
+      </p>
+    </div>
+
+    <!-- ============ DYE PATTERN THUMBNAILS ============ -->
+    <div class="card">
+      <h2>Dye Injection Patterns</h2>
+      <div class="pattern-grid">
+        <div class="pattern" data-pattern="laminar">
+          <canvas id="pcLaminar"></canvas>
+          <em>Laminar</em>
+        </div>
+        <div class="pattern" data-pattern="trans">
+          <canvas id="pcTrans"></canvas>
+          <em>Transitional</em>
+        </div>
+        <div class="pattern" data-pattern="turb">
+          <canvas id="pcTurb"></canvas>
+          <em>Turbulent</em>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ CONTROLS ============ -->
+    <div class="card">
+      <h2>Controls</h2>
+      <div class="ctrl">
+        <div class="ctrl-head">
+          <label for="flowSlider">Flow control valve (V2)</label>
+          <output id="flowOut">0 %</output>
+        </div>
+        <input type="range" id="flowSlider" min="0" max="100" step="0.5" value="0">
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-head">
+          <label for="diaSlider">Observation tube diameter</label>
+          <output id="diaOut" class="accent2">15.0 mm</output>
+        </div>
+        <input type="range" id="diaSlider" class="accent2" min="6" max="40" step="0.5" value="15">
+        <div class="dia-row">
+          <button class="dia-preset" data-dia="8">8 mm</button>
+          <button class="dia-preset on" data-dia="15">15 mm</button>
+          <button class="dia-preset" data-dia="25">25 mm</button>
+          <button class="dia-preset" data-dia="40">40 mm</button>
+        </div>
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-head">
+          <label for="tempSlider">Water temperature</label>
+          <output id="tempOut">25 °C</output>
+        </div>
+        <input type="range" id="tempSlider" min="10" max="40" step="1" value="25">
+      </div>
+      <div class="ctrl">
+        <div class="row">
+          <button class="btn on" id="dyeBtn">Dye Injection: ON</button>
+        </div>
+      </div>
+      <div class="ctrl">
+        <div class="ctrl-head"><label>Quick presets <span style="color:var(--muted);font-weight:400">(targets Re)</span></label></div>
+        <div class="row">
+          <button class="btn" data-preset="laminar">Laminar</button>
+          <button class="btn" data-preset="trans">Transitional</button>
+          <button class="btn" data-preset="turb">Turbulent</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ MEASUREMENT ============ -->
+    <div class="card">
+      <h2>Volumetric Measurement</h2>
+      <div class="meas-head">
+        <div class="meas-vol">
+          <span>Volume</span>
+          <input type="number" id="volInput" value="0.1" min="0.01" max="1" step="0.01">
+          <span>L</span>
+        </div>
+        <div class="timer" id="timer">0.00 s</div>
+      </div>
+      <div class="bar"><span id="fillBar"></span></div>
+      <div class="row">
+        <button class="btn primary" id="startBtn">Start Measurement</button>
+        <button class="btn" id="quickBtn">Quick Record</button>
+      </div>
+      <p class="hint" style="margin:10px 0 0">
+        The volumetric tank fills at the actual flow rate Q. When full, the reading is
+        recorded automatically into the data sheet below.
+      </p>
+    </div>
+
+    <!-- ============ DATA SHEET — ENHANCED ACTIONS ============ -->
+    <div class="card">
+      <h2>
+        <span style="display:flex;align-items:center;gap:8px">
+          Data Sheet
+          <span class="row-count zero" id="rowCount">0</span>
+        </span>
+        <span class="card-actions">
+          <button class="card-btn csv" id="exportBtn" title="Download data as CSV">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            CSV
+          </button>
+          <button class="card-btn clear" id="clearBtn" title="Clear all recorded rows">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                 stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+              <path d="M10 11v6M14 11v6"/>
+              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+            </svg>
+            Clear
+          </button>
+        </span>
+      </h2>
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr>
+              <th>#</th><th>D (mm)</th><th>V (L)</th><th>t (s)</th>
+              <th>Q (L/s)</th><th>Q (m³/s)</th><th>Re</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr class="empty-row"><td colspan="7">
+              <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+                     stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="9" y1="13" x2="15" y2="13"/>
+                  <line x1="9" y1="17" x2="13" y2="17"/>
+                </svg>
+                <span>No measurements recorded yet</span>
+                <span style="font-size:10.5px;opacity:.7">Click "Quick Record" to log the current flow.</span>
+              </div>
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- confirmation bar (hidden until Clear clicked) -->
+      <div class="confirm-bar" id="confirmBar">
+        <span>Delete <b id="confirmCount">0</b> recorded row(s)?</span>
+        <span class="confirm-actions">
+          <button class="confirm-btn yes" id="confirmYes">Yes, clear</button>
+          <button class="confirm-btn no" id="confirmNo">Cancel</button>
+        </span>
+      </div>
+    </div>
+
+  </aside>
+</div>
+
+<div class="toast" id="toast">
+  <svg id="toastIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+       stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"></svg>
+  <span id="toastMsg"></span>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ============================================================
+   PHYSICS
+   ============================================================ */
+let D_PIPE = 0.015;
+let AREA   = Math.PI * Math.pow(D_PIPE / 2, 2);
+const Q_MAX  = 8.0e-5;
+const RE_MIN = 2100, RE_MAX = 4000;
+
+let Q      = 0;
+let tempC  = 25;
+let dyeOn  = true;
+
+const clamp = (v,a,b) => v < a ? a : v > b ? b : v;
+
+function kinVisc(T){
+  const mu = 2.414e-5 * Math.pow(10, 247.8 / (T + 273.15 - 140));
+  return mu / 1000;
+}
+const reynolds = (q, T) => q * D_PIPE / (AREA * kinVisc(T));
+function qForRe(Re, T){ return Re * AREA * kinVisc(T) / D_PIPE; }
+
+function regimeOf(re){
+  if (re <= 0)     return { key:'none',    name:'No flow' };
+  if (re < RE_MIN) return { key:'laminar', name:'Laminar' };
+  if (re < RE_MAX) return { key:'trans',   name:'Transitional' };
+  return { key:'turb', name:'Turbulent' };
+}
+
+const CAPTION = {
+  none:    ['No flow',           'Open the flow control valve to begin the experiment.'],
+  laminar: ['Laminar flow',      'The purple dye stays as a solid, straight filament — streamlines run parallel with no mixing.'],
+  trans:   ['Transitional flow', 'The dye filament becomes wavy and eddies appear in the pipe core, while the outer layers remain laminar.'],
+  turb:    ['Turbulent flow',    'The dye breaks up and disperses across the whole pipe — no identifiable filament remains.']
+};
+
+const ANALYSIS = {
+  none: {
+    title: 'No flow',
+    body: `<p>The apparatus is idle. Water is stationary inside the observation
+           tube and <em>no dye</em> is being injected at the needle tip. In this
+           state the Reynolds number is undefined (Q = 0).</p>
+           <p>Open the flow control valve gradually to begin. On the real FM11,
+           you would first see a small overflow from the stilling tank, then the
+           dye needle lowered into the bell-mouth entry.</p>`,
+    dye: 'Not visible',
+    mix: 'None',
+    use: '—'
+  },
+  laminar: {
+    title: 'Laminar region',
+    body: `<p><b>Physics.</b> At low valve openings the flow velocity is small and
+           viscous forces dominate inertia. The fluid moves in smooth, parallel
+           layers — each layer slides past its neighbour without exchanging
+           particles. This is the regime described by <em>Hagen–Poiseuille</em>
+           flow, with a parabolic velocity profile that is fastest at the centre
+           and zero at the wall.</p>
+           <p><b>Observation.</b> The injected purple dye travels as a
+           <em>single, sharply-defined thread</em> down the entire length of the
+           tube. It does not spread, wobble, or blur. Even over 30–40 tube
+           diameters downstream the filament width stays constant.</p>
+           <p><b>Why it matters.</b> Laminar flow gives very low friction loss,
+           which is why it is desirable in precision hydraulics, microfluidics
+           and capillary blood flow. Stokes' law and Poiseuille's equation are
+           both valid only in this regime.</p>`,
+    dye: 'Solid straight line, no spread',
+    mix: 'None — layers slide past',
+    use: 'Capillary flow, lubrication, precision hydraulics'
+  },
+  trans: {
+    title: 'Transitional region',
+    body: `<p><b>Physics.</b> Between Re ≈ 2100 and Re ≈ 4000 the flow is
+           unstable. Inertial forces are now comparable to viscous forces, so
+           small disturbances in the inlet are amplified rather than damped out.
+           The first instabilities appear as <em>Tollmien–Schlichting waves</em>
+           — sinusoidal oscillations travelling downstream.</p>
+           <p><b>Observation.</b> The dye filament begins to <em>wave gently</em>
+           near the bottom of the tube, then breaks into discrete puffs or
+           "eddies" that are shed intermittently. The outer edge of the tube may
+           still show a laminar filament while the core is already agitated —
+           this is the classic <em>mixed-flow</em> appearance.</p>
+           <p><b>Why it matters.</b> This is the most sensitive region to measure
+           because the exact Reynolds number at which turbulence first appears
+           depends strongly on inlet conditions, surface roughness and vibration.
+           The <em>lower critical velocity</em> (laminar → transitional) is
+           usually higher than the <em>upper critical velocity</em>
+           (turbulent → transitional), showing a hysteresis effect.</p>`,
+    dye: 'Wavy filament with shed eddies',
+    mix: 'Partial — eddies in the core',
+    use: 'Transition zone, hysteresis demonstration'
+  },
+  turb: {
+    title: 'Turbulent region',
+    body: `<p><b>Physics.</b> At high valve openings inertia overwhelms viscous
+           damping. Small perturbations grow explosively, generating a
+           three-dimensional cascade of eddies from the largest scale down to
+           the Kolmogorov scale, where they are finally dissipated as heat. The
+           velocity profile becomes nearly flat in the core with a thin, steep
+           boundary layer at the wall.</p>
+           <p><b>Observation.</b> The dye filament breaks up immediately after
+           the needle and <em>disperses across the full cross-section</em>.
+           There is no identifiable thread — the dye appears as a diffuse
+           purple cloud whose concentration decreases downstream as it mixes
+           with the surrounding water.</p>
+           <p><b>Why it matters.</b> Turbulent flow gives much higher friction
+           loss (roughly proportional to U² instead of U), but also much better
+           mixing and heat transfer. Most industrial pipe flows — water mains,
+           process piping, HVAC ducts — operate in this regime.</p>`,
+    dye: 'Dispersed cloud, no filament',
+    mix: 'Complete across the bore',
+    use: 'Water mains, process piping, heat exchangers'
+  }
+};
+
+/* ============================================================
+   CANVAS + LAYOUT
+   ============================================================ */
+const cvs = document.getElementById('tube');
+const ctx = cvs.getContext('2d');
+let W = 0, H = 0;
+const pipe = { x:0, y:0, w:0, h:0 };
+const NEEDLE_LEN = 34;
+
+function roundRect(c, x, y, w, h, r){
+  r = Math.min(r, w/2, h/2);
+  c.beginPath();
+  c.moveTo(x+r, y);
+  c.arcTo(x+w, y,   x+w, y+h, r);
+  c.arcTo(x+w, y+h, x,   y+h, r);
+  c.arcTo(x,   y+h, x,   y,   r);
+  c.arcTo(x,   y,   x+w, y,   r);
+  c.closePath();
+}
+
+function layout(){
+  const r = cvs.getBoundingClientRect();
+  if (!r.width || !r.height) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  cvs.width  = Math.round(r.width  * dpr);
+  cvs.height = Math.round(r.height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  W = r.width; H = r.height;
+
+  const scale = D_PIPE / 0.015;
+  pipe.w = clamp(W * 0.17 * scale, 40, Math.min(W * 0.52, 260));
+  pipe.x = W/2 - pipe.w/2;
+  pipe.y = H * 0.20;
+  pipe.h = H * 0.74;
+}
+
+if (window.ResizeObserver){
+  new ResizeObserver(() => { layout(); drawAllPatterns(); }).observe(cvs.parentElement);
+}
+window.addEventListener('resize', () => { layout(); drawAllPatterns(); });
+
+const stones = [];
+for (let i = 0; i < 34; i++){
+  stones.push({
+    nx: Math.random(), ny: Math.random(),
+    rx: 3.5 + Math.random() * 5.5,
+    ry: 2.5 + Math.random() * 4,
+    rot: Math.random() * Math.PI,
+    tone: 0.55 + Math.random() * 0.45
+  });
+}
+
+/* ============================================================
+   SPRITES (purple dye)
+   ============================================================ */
+function makeSoftSprite(r, g, b){
+  const S = 64;
+  const c = document.createElement('canvas');
+  c.width = c.height = S;
+  const x = c.getContext('2d');
+  const grad = x.createRadialGradient(S/2, S/2, 0, S/2, S/2, S/2);
+  grad.addColorStop(0,    `rgba(${r},${g},${b},1)`);
+  grad.addColorStop(0.35, `rgba(${r},${g},${b},0.72)`);
+  grad.addColorStop(0.7,  `rgba(${r},${g},${b},0.22)`);
+  grad.addColorStop(1,    `rgba(${r},${g},${b},0)`);
+  x.fillStyle = grad;
+  x.fillRect(0, 0, S, S);
+  return c;
+}
+const spriteDye  = makeSoftSprite(150,  55, 215);
+const spriteCore = makeSoftSprite(225, 145, 255);
+
+/* ============================================================
+   DYE PARTICLE FIELD
+   ============================================================ */
+const N_PARTICLES = 300;
+const particles = [];
+for (let i = 0; i < N_PARTICLES; i++){
+  particles.push({
+    y: Math.random(),
+    dx: 0, vx: 0,
+    phase: Math.random() * Math.PI * 2,
+    rnd: Math.random(),
+    target: 0,
+    retarget: Math.random() * 0.4
+  });
+}
+
+function updateParticles(dt, turb, speed, timeSec){
+  const maxX = pipe.w / 2 - 3;
+  if (maxX <= 0) return;
+
+  const spreadTarget = maxX * turb * turb;
+  const waveAmp = maxX * 1.9 * turb * (1 - turb);
+
+  for (const p of particles){
+    if (speed > 0){
+      const r = Math.abs(p.dx) / maxX;
+      const lamProfile  = 1 - r * r;
+      const turbProfile = Math.pow(1 - r, 0.12);
+      const profile = lamProfile * (1 - turb) + turbProfile * turb;
+
+      p.y += speed * profile * dt * (0.9 + p.rnd * 0.2);
+      if (p.y > 1.06){
+        p.y -= 1.12;
+        p.dx = 0; p.vx = 0;
+        if (turb > 0.5) p.y = Math.random() * 0.06;
+      }
+    }
+
+    if (turb < 0.005){
+      p.dx += (0 - p.dx) * Math.min(1, dt * 9);
+      p.vx = 0;
+    } else {
+      p.retarget -= dt;
+      if (p.retarget <= 0){
+        p.target = (Math.random() * 2 - 1) * spreadTarget;
+        p.retarget = 0.07 + Math.random() * 0.32;
+      }
+      p.vx += (Math.random() * 2 - 1) * turb * 620 * dt;
+      p.vx *= Math.pow(0.10, dt);
+      p.dx += p.vx * dt;
+      p.dx += (p.target - p.dx) * Math.min(1, dt * (1.4 + turb * 3.4));
+
+      const wave = Math.sin(p.y * 14 - timeSec * 3.2 + p.phase * 0.4)
+                   * waveAmp * (0.15 + p.y * 0.95);
+      p.dx += wave * dt * 2.4;
+
+      if (p.dx >  maxX){ p.dx =  maxX; p.vx *= -0.35; }
+      if (p.dx < -maxX){ p.dx = -maxX; p.vx *= -0.35; }
+    }
+  }
+}
+
+/* ============================================================
+   RENDERING
+   ============================================================ */
+function draw(turb, timeSec){
+  ctx.clearRect(0, 0, W, H);
+
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#0d1729');
+  bg.addColorStop(1, '#060a12');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  const cx = pipe.x + pipe.w / 2;
+  const tankTop = 16;
+  const tankBot = pipe.y - 26;
+  const tankW = Math.min(W - 16, pipe.w * 1.35 + 50);
+  const tankX = cx - tankW / 2;
+
+  drawHeaderTank(tankX, tankTop, tankW, tankBot, cx);
+
+  ctx.beginPath();
+  ctx.moveTo(cx - pipe.w * 0.85, tankBot);
+  ctx.lineTo(cx - pipe.w / 2, pipe.y);
+  ctx.lineTo(cx + pipe.w / 2, pipe.y);
+  ctx.lineTo(cx + pipe.w * 0.85, tankBot);
+  ctx.closePath();
+  const bellGrad = ctx.createLinearGradient(0, tankBot, 0, pipe.y);
+  bellGrad.addColorStop(0, 'rgba(150,190,235,0.22)');
+  bellGrad.addColorStop(1, 'rgba(80,130,200,0.10)');
+  ctx.fillStyle = bellGrad;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(160,200,250,0.42)';
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
+
+  drawGlassTube(turb, timeSec);
+
+  const needleTop = 2;
+  const needleTip = pipe.y + NEEDLE_LEN;
+  ctx.beginPath();
+  ctx.moveTo(cx, needleTop);
+  ctx.lineTo(cx, needleTip);
+  ctx.strokeStyle = dyeOn ? 'rgba(220,232,248,0.90)' : 'rgba(150,165,185,0.4)';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.arc(cx, needleTip, 3.8, 0, 6.2832);
+  ctx.fillStyle = dyeOn ? 'rgba(168,85,247,0.95)' : 'rgba(140,155,175,0.5)';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx - 1, needleTip - 1, 1.3, 0, 6.2832);
+  ctx.fillStyle = 'rgba(240,215,255,0.85)';
+  ctx.fill();
+
+  ctx.font = '10px "Segoe UI", system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(139,154,179,0.7)';
+  ctx.textAlign = 'left';
+  ctx.fillText('DYE INJECTOR', 10, H - 8);
+
+  ctx.textAlign = 'right';
+  ctx.fillText('HEADER TANK', W - 10, Math.max(22, tankBot - 42));
+  ctx.fillText('BELL MOUTH',  W - 10, pipe.y - 6);
+  ctx.fillText(`OBSERVATION TUBE  ·  Ø ${(D_PIPE*1000).toFixed(1)} mm`, W - 10, pipe.y + 20);
+  ctx.textAlign = 'left';
+}
+
+function drawHeaderTank(x, y, w, bot, cx){
+  ctx.save();
+  roundRect(ctx, x, y, w, bot - y, 12);
+  const glassGrad = ctx.createLinearGradient(x, 0, x + w, 0);
+  glassGrad.addColorStop(0,    'rgba(140,190,255,0.10)');
+  glassGrad.addColorStop(0.15, 'rgba(120,175,240,0.04)');
+  glassGrad.addColorStop(0.5,  'rgba(100,160,235,0.02)');
+  glassGrad.addColorStop(0.85, 'rgba(120,175,240,0.04)');
+  glassGrad.addColorStop(1,    'rgba(140,190,255,0.10)');
+  ctx.fillStyle = glassGrad;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(150,200,255,0.35)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  roundRect(ctx, x, y, w, bot - y, 12);
+  ctx.clip();
+
+  const waterTop = bot - 42;
+  const wg = ctx.createLinearGradient(0, waterTop, 0, bot);
+  wg.addColorStop(0,   'rgba(70,155,235,0.34)');
+  wg.addColorStop(0.6, 'rgba(45,115,200,0.40)');
+  wg.addColorStop(1,   'rgba(28,85,170,0.46)');
+  ctx.fillStyle = wg;
+  ctx.fillRect(x, waterTop, w, bot - waterTop);
+
+  ctx.beginPath();
+  ctx.moveTo(x, waterTop);
+  ctx.quadraticCurveTo(x + w/2, waterTop - 2.2, x + w, waterTop);
+  ctx.strokeStyle = 'rgba(180,225,255,0.65)';
+  ctx.lineWidth = 1.4;
+  ctx.stroke();
+
+  for (let i = 0; i < 8; i++){
+    const bx = x + 12 + ((i * 47) % (w - 24));
+    const by = waterTop + 6 + ((i * 23) % 20);
+    ctx.beginPath();
+    ctx.arc(bx, by, 0.6 + (i % 3) * 0.5, 0, 6.2832);
+    ctx.fillStyle = 'rgba(200,235,255,0.28)';
+    ctx.fill();
+  }
+
+  for (const s of stones){
+    const sx = x + 10 + s.nx * (w - 20);
+    const sy = bot - 8 - s.ny * 26;
+    ctx.save();
+    ctx.translate(sx, sy);
+    ctx.rotate(s.rot);
+    ctx.beginPath();
+    ctx.ellipse(0, 0, s.rx, s.ry, 0, 0, 6.2832);
+    const sg = ctx.createLinearGradient(-s.rx, -s.ry, s.rx, s.ry);
+    sg.addColorStop(0, `rgba(${190 * s.tone},${195 * s.tone},${200 * s.tone},0.75)`);
+    sg.addColorStop(1, `rgba(${110 * s.tone},${118 * s.tone},${128 * s.tone},0.85)`);
+    ctx.fillStyle = sg;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(210,225,240,0.20)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(-s.rx * 0.3, -s.ry * 0.35, s.rx * 0.4, s.ry * 0.3, 0, 0, 6.2832);
+    ctx.fillStyle = 'rgba(230,240,250,0.18)';
+    ctx.fill();
+    ctx.restore();
+  }
+
+  const shadowGrad = ctx.createLinearGradient(0, bot - 20, 0, bot);
+  shadowGrad.addColorStop(0, 'rgba(0,0,0,0)');
+  shadowGrad.addColorStop(1, 'rgba(0,0,0,0.35)');
+  ctx.fillStyle = shadowGrad;
+  ctx.fillRect(x, bot - 20, w, 20);
+  ctx.restore();
+
+  const hlGrad = ctx.createLinearGradient(x, 0, x + w, 0);
+  hlGrad.addColorStop(0,    'rgba(255,255,255,0.00)');
+  hlGrad.addColorStop(0.06, 'rgba(255,255,255,0.14)');
+  hlGrad.addColorStop(0.12, 'rgba(255,255,255,0.00)');
+  hlGrad.addColorStop(0.88, 'rgba(255,255,255,0.00)');
+  hlGrad.addColorStop(0.94, 'rgba(255,255,255,0.10)');
+  hlGrad.addColorStop(1,    'rgba(255,255,255,0.00)');
+  ctx.save();
+  roundRect(ctx, x, y, w, bot - y, 12);
+  ctx.clip();
+  ctx.fillStyle = hlGrad;
+  ctx.fillRect(x, y, w, bot - y);
+  ctx.restore();
+}
+
+function drawGlassTube(turb, timeSec){
+  const { x, y, w, h } = pipe;
+  const cx = x + w / 2;
+
+  ctx.save();
+  roundRect(ctx, x, y, w, h, 8);
+  ctx.clip();
+
+  const waterGrad = ctx.createLinearGradient(x, 0, x + w, 0);
+  waterGrad.addColorStop(0,    'rgba(35,95,175,0.48)');
+  waterGrad.addColorStop(0.18, 'rgba(65,145,225,0.26)');
+  waterGrad.addColorStop(0.5,  'rgba(95,170,240,0.16)');
+  waterGrad.addColorStop(0.82, 'rgba(65,145,225,0.26)');
+  waterGrad.addColorStop(1,    'rgba(35,95,175,0.48)');
+  ctx.fillStyle = waterGrad;
+  ctx.fillRect(x, y, w, h);
+
+  drawDyeField(cx, turb, timeSec);
+
+  const spec = ctx.createLinearGradient(x, 0, x + w * 0.35, 0);
+  spec.addColorStop(0,   'rgba(255,255,255,0.00)');
+  spec.addColorStop(0.35,'rgba(255,255,255,0.14)');
+  spec.addColorStop(0.55,'rgba(255,255,255,0.00)');
+  ctx.fillStyle = spec;
+  ctx.fillRect(x, y, w * 0.35, h);
+
+  const spec2 = ctx.createLinearGradient(x + w * 0.82, 0, x + w, 0);
+  spec2.addColorStop(0, 'rgba(255,255,255,0.00)');
+  spec2.addColorStop(0.6, 'rgba(255,255,255,0.08)');
+  spec2.addColorStop(1, 'rgba(255,255,255,0.00)');
+  ctx.fillStyle = spec2;
+  ctx.fillRect(x + w * 0.82, y, w * 0.18, h);
+
+  const edge = ctx.createLinearGradient(x, 0, x + w, 0);
+  edge.addColorStop(0,    'rgba(8,18,32,0.45)');
+  edge.addColorStop(0.08, 'rgba(8,18,32,0.00)');
+  edge.addColorStop(0.92, 'rgba(8,18,32,0.00)');
+  edge.addColorStop(1,    'rgba(8,18,32,0.45)');
+  ctx.fillStyle = edge;
+  ctx.fillRect(x, y, w, h);
+
+  ctx.restore();
+
+  roundRect(ctx, x, y, w, h, 8);
+  ctx.strokeStyle = 'rgba(170,210,255,0.45)';
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
+
+  roundRect(ctx, x + 1.2, y + 1.2, w - 2.4, h - 2.4, 6.5);
+  ctx.strokeStyle = 'rgba(220,235,255,0.14)';
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+}
+
+function drawDyeField(cx, turb, timeSec){
+  if (!dyeOn) return;
+  if (pipe.w <= 4) return;
+
+  const travel  = pipe.h - NEEDLE_LEN;
+  const top     = pipe.y + NEEDLE_LEN;
+  const clipTop = pipe.y + 2;
+  const clipBot = pipe.y + pipe.h - 2;
+
+  const vis = [];
+  for (const p of particles){
+    const y = top + p.y * travel;
+    if (y < clipTop - 40 || y > clipBot + 40) continue;
+    vis.push({ x: cx + p.dx, y, rnd: p.rnd, dy: p.y });
+  }
+  if (vis.length < 2) return;
+  vis.sort((a, b) => a.y - b.y);
+
+  const filamentA = clamp(1 - turb * 1.35, 0, 1);
+  const cloudA    = clamp((turb - 0.10) * 1.25, 0, 1);
+  const boreScale = clamp(D_PIPE / 0.015, 0.55, 2.4);
+
+  ctx.save();
+  roundRect(ctx, pipe.x, pipe.y, pipe.w, pipe.h, 7);
+  ctx.clip();
+  ctx.globalCompositeOperation = 'lighter';
+
+  if (filamentA > 0.02){
+    const pts = vis.map(v => [v.x, v.y]);
+    const strokePath = (width, color) => {
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0], pts[0][1]);
+      for (let i = 1; i < pts.length - 1; i++){
+        const xc = (pts[i][0] + pts[i+1][0]) / 2;
+        const yc = (pts[i][1] + pts[i+1][1]) / 2;
+        ctx.quadraticCurveTo(pts[i][0], pts[i][1], xc, yc);
+      }
+      const last = pts[pts.length - 1];
+      ctx.lineTo(last[0], last[1]);
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = color;
+      ctx.lineWidth = width;
+      ctx.stroke();
+    };
+
+    strokePath((13 + turb * 24) * boreScale, `rgba(115, 25, 190, ${0.13 * filamentA})`);
+    strokePath((6.5 + turb * 11) * boreScale, `rgba(160, 60, 220, ${0.28 * filamentA})`);
+    strokePath((2.6 + turb * 2.2) * boreScale, `rgba(235, 165, 255, ${0.90 * filamentA})`);
+  }
+
+  if (cloudA > 0.02){
+    for (const v of vis){
+      const size = (5 + turb * 14) * (0.7 + v.dy * 0.7) * boreScale;
+      ctx.globalAlpha = (0.055 + v.rnd * 0.045) * cloudA;
+      ctx.drawImage(spriteDye, v.x - size, v.y - size, size * 2, size * 2);
+    }
+    for (const v of vis){
+      const size = (2.2 + turb * 5) * (0.8 + v.dy * 0.5) * boreScale;
+      ctx.globalAlpha = (0.10 + v.rnd * 0.09) * cloudA;
+      ctx.drawImage(spriteCore, v.x - size, v.y - size, size * 2, size * 2);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.restore();
+}
+
+/* ============================================================
+   PATTERN THUMBNAILS
+   ============================================================ */
+function seededRnd(seed){
+  let s = seed % 2147483647;
+  if (s <= 0) s += 2147483646;
+  return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+}
+
+function drawPattern(cv, regime){
+  if (!cv) return;
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  const w = cv.clientWidth  || 120;
+  const h = cv.clientHeight || 112;
+  cv.width  = Math.round(w * dpr);
+  cv.height = Math.round(h * dpr);
+
+  const g = cv.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+
+  const bg = g.createLinearGradient(0, 0, 0, h);
+  bg.addColorStop(0, '#0c1524');
+  bg.addColorStop(1, '#060a12');
+  g.fillStyle = bg;
+  g.fillRect(0, 0, w, h);
+
+  const tw = Math.min(w * 0.52, 44);
+  const tx = w / 2 - tw / 2;
+  const ty = 8;
+  const th = h - 16;
+  const cx = w / 2;
+
+  g.save();
+  roundRect(g, tx, ty, tw, th, 6);
+  g.clip();
+
+  const wg = g.createLinearGradient(tx, 0, tx + tw, 0);
+  wg.addColorStop(0,    'rgba(35,95,175,0.48)');
+  wg.addColorStop(0.5,  'rgba(95,170,240,0.18)');
+  wg.addColorStop(1,    'rgba(35,95,175,0.48)');
+  g.fillStyle = wg;
+  g.fillRect(tx, ty, tw, th);
+
+  g.beginPath();
+  g.moveTo(cx, ty);
+  g.lineTo(cx, ty + 7);
+  g.strokeStyle = 'rgba(200,220,245,0.6)';
+  g.lineWidth = 2;
+  g.stroke();
+
+  g.globalCompositeOperation = 'lighter';
+  const top = ty + 8;
+
+  if (regime === 'laminar'){
+    g.beginPath();
+    g.moveTo(cx, top);
+    g.lineTo(cx, ty + th);
+    g.lineCap = 'round';
+    g.strokeStyle = 'rgba(115,25,190,0.18)';
+    g.lineWidth = 13; g.stroke();
+    g.strokeStyle = 'rgba(160,60,220,0.42)';
+    g.lineWidth = 6;  g.stroke();
+    g.strokeStyle = 'rgba(235,165,255,0.95)';
+    g.lineWidth = 2.4; g.stroke();
+  }
+  else if (regime === 'trans'){
+    const N = 80;
+    const pts = [];
+    for (let i = 0; i <= N; i++){
+      const t = i / N;
+      const y = top + t * (th - 8);
+      const amp = 0.7 + t * t * 5.2;
+      const x = cx + Math.sin(t * 11.5) * amp;
+      pts.push([x, y]);
+    }
+    g.beginPath();
+    g.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < pts.length; i++) g.lineTo(pts[i][0], pts[i][1]);
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
+    g.strokeStyle = 'rgba(115,25,190,0.20)';
+    g.lineWidth = 14; g.stroke();
+    g.strokeStyle = 'rgba(160,60,220,0.48)';
+    g.lineWidth = 6;  g.stroke();
+    g.strokeStyle = 'rgba(235,165,255,0.95)';
+    g.lineWidth = 2.4; g.stroke();
+
+    const rnd = seededRnd(7);
+    for (let i = 0; i < 16; i++){
+      const t = 0.48 + rnd() * 0.52;
+      const y = top + t * (th - 8);
+      const x = cx + (rnd() * 2 - 1) * tw * 0.42;
+      g.beginPath();
+      g.arc(x, y, 1.2 + rnd() * 2.8, 0, 6.2832);
+      g.fillStyle = `rgba(200,110,245,${0.32 + rnd() * 0.38})`;
+      g.fill();
+    }
+  }
+  else {
+    const rnd = seededRnd(13);
+    for (let i = 0; i < 110; i++){
+      const t = rnd();
+      const y = top + t * (th - 8);
+      const spread = (0.10 + t * 0.92) * tw * 0.48;
+      const x = cx + (rnd() * 2 - 1) * spread;
+      g.beginPath();
+      g.arc(x, y, 3.5 + rnd() * 5.5, 0, 6.2832);
+      g.fillStyle = `rgba(140,50,210,${0.04 + rnd() * 0.04})`;
+      g.fill();
+    }
+    for (let i = 0; i < 130; i++){
+      const t = rnd();
+      const y = top + t * (th - 8);
+      const spread = (0.12 + t * 0.90) * tw * 0.46;
+      const x = cx + (rnd() * 2 - 1) * spread;
+      g.beginPath();
+      g.arc(x, y, 1.2 + rnd() * 2.6, 0, 6.2832);
+      g.fillStyle = `rgba(225,140,255,${0.10 + rnd() * 0.20})`;
+      g.fill();
+    }
+  }
+
+  g.globalCompositeOperation = 'source-over';
+  g.restore();
+
+  roundRect(g, tx, ty, tw, th, 6);
+  g.strokeStyle = 'rgba(150,200,255,0.4)';
+  g.lineWidth = 1.2;
+  g.stroke();
+}
+
+const patternEls = {
+  laminar: document.querySelector('[data-pattern="laminar"]'),
+  trans:   document.querySelector('[data-pattern="trans"]'),
+  turb:    document.querySelector('[data-pattern="turb"]')
+};
+const patternCvs = {
+  laminar: document.getElementById('pcLaminar'),
+  trans:   document.getElementById('pcTrans'),
+  turb:    document.getElementById('pcTurb')
+};
+
+function drawAllPatterns(){
+  drawPattern(patternCvs.laminar, 'laminar');
+  drawPattern(patternCvs.trans,   'trans');
+  drawPattern(patternCvs.turb,    'turb');
+}
+
+function highlightPattern(key){
+  for (const k in patternEls) patternEls[k].classList.toggle('active', k === key);
+}
+
+const RE_TARGETS = { laminar: 1000, trans: 2900, turb: 5400 };
+
+for (const k in patternEls){
+  patternEls[k].addEventListener('click', () => {
+    const targetRe = RE_TARGETS[k];
+    const q = qForRe(targetRe, tempC);
+    if (q > Q_MAX){
+      flowSlider.value = 100;
+      Q = Q_MAX;
+      flowOut.textContent = '100 %';
+      toast('Valve at maximum — Re limited by ' + (D_PIPE*1000).toFixed(1) + ' mm bore', 'warn');
+    } else {
+      const v = qToSlider(q);
+      flowSlider.value = v.toFixed(1);
+      Q = sliderToQ(v);
+      flowOut.textContent = v.toFixed(0) + ' %';
+      toast('Valve set for ' + patternEls[k].querySelector('em').textContent.toLowerCase() + ' flow');
+    }
+  });
+}
+
+/* ============================================================
+   VALVE SWEEP TABLE
+   ============================================================ */
+const SWEEP_VALVES = [5, 10, 15, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+
+function buildSweepTable(){
+  const tb = document.getElementById('sweepBody');
+  tb.innerHTML = '';
+  SWEEP_VALVES.forEach(v => {
+    const q = sliderToQ(v);
+    const U = q / AREA;
+    const re = reynolds(q, tempC);
+    const rg = regimeOf(re);
+    const tr = document.createElement('tr');
+    tr.dataset.valve = v;
+    tr.innerHTML = `
+      <td>${v} %</td>
+      <td>${(q*1000).toFixed(4)}</td>
+      <td>${U.toFixed(4)}</td>
+      <td>${re.toFixed(0)}</td>
+      <td class="reg ${rg.key}">${rg.name}</td>
+    `;
+    tr.addEventListener('click', () => {
+      flowSlider.value = v;
+      Q = sliderToQ(v);
+      flowOut.textContent = v + ' %';
+    });
+    tb.appendChild(tr);
+  });
+}
+
+function updateSweepActive(){
+  const cur = parseFloat(flowSlider.value);
+  document.querySelectorAll('#sweepBody tr').forEach(tr => {
+    tr.classList.toggle('active', Math.abs(parseFloat(tr.dataset.valve) - cur) < 0.5);
+  });
+}
+
+/* ============================================================
+   MEASUREMENT
+   ============================================================ */
+const meas = { running:false, elapsed:0, collected:0, target:0.1 };
+const timerEl  = document.getElementById('timer');
+const fillBar  = document.getElementById('fillBar');
+const volInput = document.getElementById('volInput');
+const tbody    = document.getElementById('tbody');
+const startBtn = document.getElementById('startBtn');
+let rows = [];
+
+function startMeasurement(){
+  if (Q <= 0){ toast('Open the flow control valve first.', 'warn'); return; }
+  meas.target = clamp(parseFloat(volInput.value) || 0.1, 0.01, 5);
+  volInput.value = meas.target;
+  meas.running = true;
+  meas.elapsed = 0;
+  meas.collected = 0;
+  startBtn.disabled = true;
+  startBtn.textContent = 'Measuring…';
+  timerEl.style.color = '#60a5fa';
+}
+function stopMeasurementUI(){
+  startBtn.disabled = false;
+  startBtn.textContent = 'Start Measurement';
+  timerEl.style.color = '#fff';
+}
+function updateMeasurement(dt){
+  if (!meas.running) return;
+  meas.elapsed   += dt;
+  meas.collected += Q * 1000 * dt;
+  const frac = clamp(meas.collected / meas.target, 0, 1);
+  fillBar.style.width = (frac * 100) + '%';
+  timerEl.textContent = meas.elapsed.toFixed(2) + ' s';
+  if (frac >= 1){
+    meas.running = false;
+    fillBar.style.width = '0%';
+    stopMeasurementUI();
+    recordRow(meas.target, meas.elapsed);
+  }
+}
+
+const rowCountEl = document.getElementById('rowCount');
+
+function updateRowCount(bump){
+  rowCountEl.textContent = rows.length;
+  rowCountEl.classList.toggle('zero', rows.length === 0);
+  if (bump){
+    rowCountEl.classList.remove('bump');
+    void rowCountEl.offsetWidth;   // restart animation
+    rowCountEl.classList.add('bump');
+  }
+}
+
+function recordRow(V, t){
+  const qm = (V / 1000) / t;
+  const ql = V / t;
+  const re = reynolds(qm, tempC);
+  const rg = regimeOf(re);
+  rows.push({ V, t, ql, qm, re, regime: rg, D: D_PIPE });
+
+  const col = rg.key === 'laminar' ? 'var(--laminar)'
+            : rg.key === 'trans'   ? 'var(--trans)'
+            : 'var(--turb)';
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><span class="dot-regime" style="background:${col}"></span>${rows.length}</td>
+    <td>${(D_PIPE*1000).toFixed(1)}</td>
+    <td>${V.toFixed(3)}</td>
+    <td>${t.toFixed(2)}</td>
+    <td>${ql.toFixed(5)}</td>
+    <td>${qm.toExponential(3)}</td>
+    <td>${re.toFixed(1)}</td>
+  `;
+  tbody.prepend(tr);
+  const emptyRow = tbody.querySelector('.empty-row');
+  if (emptyRow) emptyRow.remove();
+
+  updateRowCount(true);
+  toast(`Recorded — Ø${(D_PIPE*1000).toFixed(1)}mm, Re = ${re.toFixed(0)} (${rg.name})`, 'success');
+}
+
+function quickRecord(){
+  if (Q <= 0){ toast('Open the flow control valve first.', 'warn'); return; }
+  const V = clamp(parseFloat(volInput.value) || 0.1, 0.01, 5);
+  const t = (V / 1000) / Q;
+  recordRow(V, t);
+}
+
+/* ============================================================
+   UI BINDINGS
+   ============================================================ */
+const flowSlider   = document.getElementById('flowSlider');
+const flowOut      = document.getElementById('flowOut');
+const diaSlider    = document.getElementById('diaSlider');
+const diaOut       = document.getElementById('diaOut');
+const tempSlider   = document.getElementById('tempSlider');
+const tempOut      = document.getElementById('tempOut');
+const dyeBtn       = document.getElementById('dyeBtn');
+const reValue      = document.getElementById('reValue');
+const flowTag      = document.getElementById('flowTag');
+const marker       = document.getElementById('marker');
+const mQ           = document.getElementById('mQ');
+const mU           = document.getElementById('mU');
+const mD           = document.getElementById('mD');
+const mNu          = document.getElementById('mNu');
+const topPill      = document.getElementById('topPill');
+const stageCaption = document.getElementById('stageCaption');
+const anaHead      = document.getElementById('anaHead');
+const anaTitle     = document.getElementById('anaTitle');
+const anaSub       = document.getElementById('anaSub');
+const anaBody      = document.getElementById('anaBody');
+const obsValve     = document.getElementById('obsValve');
+const obsDye       = document.getElementById('obsDye');
+const obsMix       = document.getElementById('obsMix');
+const obsUse       = document.getElementById('obsUse');
+const sweepD       = document.getElementById('sweepD');
+const sweepT       = document.getElementById('sweepT');
+
+function sliderToQ(v){ return Q_MAX * Math.pow(v / 100, 1.5); }
+function qToSlider(q){ return 100 * Math.pow(clamp(q / Q_MAX, 0, 1), 1 / 1.5); }
+
+flowSlider.addEventListener('input', () => {
+  const v = parseFloat(flowSlider.value);
+  Q = sliderToQ(v);
+  flowOut.textContent = v.toFixed(0) + ' %';
+});
+
+function setDiameter(mm){
+  diaSlider.value = mm;
+  diaOut.textContent = mm.toFixed(1) + ' mm';
+  D_PIPE = mm / 1000;
+  AREA   = Math.PI * Math.pow(D_PIPE / 2, 2);
+
+  mD.textContent = mm.toFixed(1);
+  topPill.textContent = `D = ${mm.toFixed(1)} mm · ν = ${(kinVisc(tempC)*1e6).toFixed(3)}×10⁻⁶ m²/s`;
+  sweepD.textContent = mm.toFixed(1);
+
+  document.querySelectorAll('.dia-preset').forEach(b => {
+    b.classList.toggle('on', Math.abs(parseFloat(b.dataset.dia) - mm) < 0.01);
+  });
+
+  layout();
+  buildSweepTable();
+  updateSweepActive();
+}
+
+diaSlider.addEventListener('input', () => {
+  setDiameter(parseFloat(diaSlider.value));
+});
+
+document.querySelectorAll('.dia-preset').forEach(btn => {
+  btn.addEventListener('click', () => {
+    setDiameter(parseFloat(btn.dataset.dia));
+    toast(`Tube diameter set to Ø${btn.dataset.dia} mm`);
+  });
+});
+
+tempSlider.addEventListener('input', () => {
+  tempC = parseFloat(tempSlider.value);
+  tempOut.textContent = tempC + ' °C';
+  topPill.textContent = `D = ${(D_PIPE*1000).toFixed(1)} mm · ν = ${(kinVisc(tempC)*1e6).toFixed(3)}×10⁻⁶ m²/s`;
+  sweepT.textContent = tempC;
+  buildSweepTable();
+  updateSweepActive();
+});
+
+dyeBtn.addEventListener('click', () => {
+  dyeOn = !dyeOn;
+  dyeBtn.textContent = 'Dye Injection: ' + (dyeOn ? 'ON' : 'OFF');
+  dyeBtn.classList.toggle('on', dyeOn);
+});
+
+document.querySelectorAll('[data-preset]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const targetRe = RE_TARGETS[btn.dataset.preset];
+    const q = qForRe(targetRe, tempC);
+    if (q > Q_MAX){
+      flowSlider.value = 100;
+      Q = Q_MAX;
+      flowOut.textContent = '100 %';
+      toast(`Valve maxed — Ø${(D_PIPE*1000).toFixed(1)} mm tube limits Re at ${reynolds(Q_MAX, tempC).toFixed(0)}`, 'warn');
+    } else {
+      const v = qToSlider(q);
+      flowSlider.value = v.toFixed(1);
+      Q = sliderToQ(v);
+      flowOut.textContent = v.toFixed(0) + ' %';
+      toast('Valve set for ' + btn.textContent.toLowerCase() + ' flow');
+    }
+  });
+});
+
+startBtn.addEventListener('click', startMeasurement);
+document.getElementById('quickBtn').addEventListener('click', quickRecord);
+
+/* ============================================================
+   ENHANCED CSV / CLEAR LOGIC
+   ============================================================ */
+const exportBtn  = document.getElementById('exportBtn');
+const clearBtn   = document.getElementById('clearBtn');
+const confirmBar = document.getElementById('confirmBar');
+const confirmYes = document.getElementById('confirmYes');
+const confirmNo  = document.getElementById('confirmNo');
+const confirmCount = document.getElementById('confirmCount');
+
+function pulse(el){
+  el.classList.remove('pulse');
+  void el.offsetWidth;
+  el.classList.add('pulse');
+}
+
+/* --- CSV export --- */
+exportBtn.addEventListener('click', () => {
+  pulse(exportBtn);
+
+  if (rows.length === 0){
+    exportBtn.disabled = true;
+    toast('No data to export yet — record some measurements first.', 'warn');
+    setTimeout(() => exportBtn.disabled = false, 900);
+    return;
+  }
+
+  /* build CSV */
+  let csv = 'D (mm),Volume (L),Time (s),Q (L/s),Q (m3/s),Reynolds Number,Regime\n';
+  /* export newest-last for chronological order */
+  [...rows].reverse().forEach(r => {
+    csv += `${(r.D*1000).toFixed(1)},` +
+           `${r.V.toFixed(3)},` +
+           `${r.t.toFixed(2)},` +
+           `${r.ql.toFixed(5)},` +
+           `${r.qm.toExponential(4)},` +
+           `${r.re.toFixed(2)},` +
+           `${r.regime.name}\n`;
+  });
+
+  /* timestamped filename */
+  const stamp = new Date().toISOString().replace(/[:.]/g,'-').slice(0,19);
+  const filename = `FM11_reynolds_${stamp}.csv`;
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+
+  /* brief success state on the button */
+  const originalHTML = exportBtn.innerHTML;
+  exportBtn.classList.add('exported');
+  exportBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+         stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+    ${rows.length} exported
+  `;
+  setTimeout(() => {
+    exportBtn.classList.remove('exported');
+    exportBtn.innerHTML = originalHTML;
+  }, 1700);
+
+  toast(`${rows.length} row${rows.length>1?'s':''} exported as CSV.`, 'success');
+});
+
+/* --- Clear with confirmation --- */
+clearBtn.addEventListener('click', () => {
+  pulse(clearBtn);
+
+  if (rows.length === 0){
+    clearBtn.disabled = true;
+    toast('Data sheet is already empty.', 'warn');
+    setTimeout(() => clearBtn.disabled = false, 900);
+    return;
+  }
+
+  confirmCount.textContent = rows.length;
+  confirmBar.classList.toggle('show');
+});
+
+confirmNo.addEventListener('click', () => {
+  confirmBar.classList.remove('show');
+});
+
+confirmYes.addEventListener('click', () => {
+  const removed = rows.length;
+  rows = [];
+  tbody.innerHTML = `<tr class="empty-row"><td colspan="7">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="9" y1="13" x2="15" y2="13"/>
+          <line x1="9" y1="17" x2="13" y2="17"/>
+        </svg>
+        <span>No measurements recorded yet</span>
+        <span style="font-size:10.5px;opacity:.7">Click "Quick Record" to log the current flow.</span>
+      </div>
+    </td></tr>`;
+  confirmBar.classList.remove('show');
+  updateRowCount(true);
+  toast(`Cleared ${removed} row${removed>1?'s':''}.`, 'success');
+});
+
+/* ============================================================
+   TOAST — with icons
+   ============================================================ */
+let toastTimer = null;
+const toastEl   = document.getElementById('toast');
+const toastMsg  = document.getElementById('toastMsg');
+const toastIcon = document.getElementById('toastIcon');
+
+const ICON_OK   = '<polyline points="20 6 9 17 4 12"/>';
+const ICON_WARN = '<path d="M12 9v4M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>';
+const ICON_INFO = '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>';
+
+function toast(msg, type){
+  toastMsg.textContent = msg;
+  toastEl.className = 'toast';
+  if (type === 'success'){ toastEl.classList.add('success'); toastIcon.innerHTML = ICON_OK; }
+  else if (type === 'warn'){ toastEl.classList.add('warn'); toastIcon.innerHTML = ICON_WARN; }
+  else { toastIcon.innerHTML = ICON_INFO; }
+
+  toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2200);
+}
+
+/* ============================================================
+   HUD + LIVE ANALYSIS
+   ============================================================ */
+let hudAcc = 0;
+let lastTagKey = '';
+
+function updateHUD(re, rg){
+  reValue.textContent = re >= 10000 ? (re / 1000).toFixed(1) + 'k' : re.toFixed(0);
+
+  if (rg.key !== lastTagKey){
+    flowTag.className = 'tag ' + rg.key;
+    flowTag.textContent = rg.name;
+    stageCaption.className = 'stage-caption ' + rg.key;
+    stageCaption.innerHTML = `<b>${CAPTION[rg.key][0]}</b><span>${CAPTION[rg.key][1]}</span>`;
+    highlightPattern(rg.key);
+
+    const a = ANALYSIS[rg.key];
+    anaHead.className = 'analysis-head ' + rg.key;
+    anaTitle.textContent = a.title;
+    anaBody.innerHTML = a.body;
+    obsDye.textContent = a.dye;
+    obsMix.textContent = a.mix;
+    obsUse.textContent = a.use;
+
+    lastTagKey = rg.key;
+  }
+
+  const valvePct = parseFloat(flowSlider.value);
+  anaSub.textContent = `valve ${valvePct.toFixed(0)} % · Re ${re.toFixed(0)}`;
+  obsValve.textContent = valvePct.toFixed(0) + ' %  (' + (Q*1000).toFixed(4) + ' L/s)';
+
+  marker.style.left = clamp(re / 6000 * 100, 0, 100) + '%';
+  mQ.textContent  = (Q * 1000).toFixed(3);
+  mU.textContent  = (Q / AREA).toFixed(4);
+  mNu.textContent = (kinVisc(tempC) * 1e6).toFixed(3);
+
+  updateSweepActive();
+}
+
+/* ============================================================
+   MAIN LOOP
+   ============================================================ */
+let last = performance.now();
+let timeSec = 0;
+
+function loop(now){
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  timeSec += dt;
+
+  const nu   = kinVisc(tempC);
+  const Re   = Q * D_PIPE / (AREA * nu);
+  const U    = Q / AREA;
+  const turb = clamp((Re - 1800) / 2600, 0, 1);
+  const speed = Q > 0 ? (0.055 + U * 3.6) : 0;
+
+  updateParticles(dt, turb, speed, timeSec);
+  updateMeasurement(dt);
+  draw(turb, timeSec);
+
+  hudAcc += dt;
+  if (hudAcc > 0.07){
+    hudAcc = 0;
+    updateHUD(Re, regimeOf(Re));
+  }
+  requestAnimationFrame(loop);
+}
+
+/* ============================================================
+   BOOT
+   ============================================================ */
+layout();
+drawAllPatterns();
+setDiameter(15);
+buildSweepTable();
+updateRowCount(false);
+Q = sliderToQ(parseFloat(flowSlider.value));
+updateHUD(0, regimeOf(0));
+requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>

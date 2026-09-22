@@ -1,0 +1,2382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flowmeter Measurement Apparatus — Virtual Lab</title>
+<style>
+:root{
+  --bg:#0a1020; --panel:#111a2e; --panel2:#16223b; --line:#22304d;
+  --txt:#dfe8f7; --dim:#8fa3c4;
+  --cyan:#38d6ff; --teal:#22c9a0; --amber:#ffb547; --pink:#ff6b9d;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; font-family:'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  background:radial-gradient(1200px 800px at 20% -10%,#132039,#080d18 60%);
+  color:var(--txt); min-height:100vh;
+}
+.app{max-width:1500px;margin:0 auto;padding:16px 18px 60px;}
+header{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:14px 20px;border-radius:14px;
+  background:linear-gradient(120deg,#122040,#0d1628 60%);
+  border:1px solid var(--line); box-shadow:0 8px 30px rgba(0,0,0,.45);
+}
+.logo{
+  width:46px;height:46px;border-radius:12px;flex:0 0 auto;
+  background:linear-gradient(135deg,var(--cyan),#1d7fd6);
+  display:grid;place-items:center;
+  box-shadow:0 0 22px rgba(56,214,255,.4);
+}
+header h1{font-size:17px;margin:0;letter-spacing:.3px}
+header p{margin:3px 0 0;font-size:12px;color:var(--dim)}
+.badge{
+  margin-left:auto;font-size:11px;padding:5px 11px;border-radius:20px;
+  background:rgba(56,214,255,.12);border:1px solid rgba(56,214,255,.35);color:var(--cyan);
+  letter-spacing:.6px;text-transform:uppercase;font-weight:600;
+}
+nav.tabs{display:flex;gap:8px;margin:16px 0;flex-wrap:wrap}
+nav.tabs button{
+  background:var(--panel);border:1px solid var(--line);color:var(--dim);
+  padding:9px 18px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;
+  transition:.18s;
+}
+nav.tabs button:hover{color:var(--txt);border-color:#33507e}
+nav.tabs button.active{
+  background:linear-gradient(135deg,rgba(56,214,255,.18),rgba(56,214,255,.05));
+  color:var(--cyan);border-color:rgba(56,214,255,.5);
+  box-shadow:0 0 16px rgba(56,214,255,.18);
+}
+.panel{display:none}
+.panel.active{display:block;animation:fade .25s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.card{
+  background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:16px;box-shadow:0 6px 22px rgba(0,0,0,.3);
+}
+.card h2{
+  margin:0 0 12px;font-size:13px;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--cyan);font-weight:700;
+}
+.card h3{font-size:12px;color:var(--dim);margin:14px 0 6px;letter-spacing:.6px;text-transform:uppercase}
+.grid{display:grid;gap:16px}
+.rig-grid{grid-template-columns:minmax(0,1.55fr) minmax(320px,1fr)}
+@media(max-width:1050px){.rig-grid{grid-template-columns:1fr}}
+.controls{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.switch{display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;font-size:13px;font-weight:600}
+.switch input{display:none}
+.track{width:44px;height:24px;border-radius:14px;background:#26324b;position:relative;transition:.2s;border:1px solid #33425f}
+.track::after{content:'';position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#7e93b5;transition:.2s}
+.switch input:checked + .track{background:rgba(34,201,160,.3);border-color:var(--teal)}
+.switch input:checked + .track::after{left:22px;background:var(--teal);box-shadow:0 0 10px var(--teal)}
+input[type=range]{-webkit-appearance:none;width:100%;height:6px;border-radius:4px;background:linear-gradient(90deg,var(--cyan),#1d7fd6);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#eaf6ff;border:3px solid var(--cyan);cursor:pointer;box-shadow:0 0 12px rgba(56,214,255,.7)}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#eaf6ff;border:3px solid var(--cyan);cursor:pointer}
+.slider-label{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-bottom:5px}
+.slider-label b{color:var(--cyan);font-size:13px}
+button.btn{
+  background:linear-gradient(135deg,#1b2b4a,#152238);border:1px solid #2b3d5e;
+  color:var(--txt);padding:9px 15px;border-radius:9px;cursor:pointer;
+  font-size:12.5px;font-weight:600;transition:.16s;
+}
+button.btn:hover{border-color:var(--cyan);color:var(--cyan)}
+button.btn:disabled{opacity:.4;cursor:not-allowed}
+button.btn.primary{background:linear-gradient(135deg,rgba(56,214,255,.22),rgba(56,214,255,.06));border-color:rgba(56,214,255,.5);color:var(--cyan)}
+button.btn.danger{border-color:rgba(255,107,157,.4);color:var(--pink)}
+.readouts{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+.readout{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.readout .k{font-size:10.5px;color:var(--dim);letter-spacing:.7px;text-transform:uppercase}
+.readout .v{font-size:19px;font-weight:700;font-family:'Consolas',monospace;margin-top:3px}
+.readout .u{font-size:11px;color:var(--dim);font-weight:400;margin-left:3px}
+.v.cyan{color:var(--cyan)} .v.teal{color:var(--teal)} .v.amber{color:var(--amber)} .v.pink{color:var(--pink)}
+.tablewrap{overflow-x:auto;border-radius:10px;border:1px solid var(--line)}
+table{border-collapse:collapse;width:100%;font-size:12px;font-family:'Consolas',monospace}
+th{background:#16223b;color:var(--cyan);padding:9px 10px;text-align:left;font-weight:600;font-size:11px;letter-spacing:.5px;white-space:nowrap;border-bottom:1px solid var(--line)}
+td{padding:8px 10px;border-bottom:1px solid rgba(34,48,77,.6);white-space:nowrap}
+tbody tr:hover{background:rgba(56,214,255,.05)}
+td.num{text-align:right}
+.empty{color:var(--dim);font-style:italic;padding:22px;text-align:center;font-family:inherit}
+.note{font-size:11.5px;color:var(--dim);line-height:1.65;background:rgba(56,214,255,.05);border-left:3px solid var(--cyan);padding:10px 13px;border-radius:0 8px 8px 0;margin-top:12px}
+.formula{font-family:'Consolas',monospace;font-size:12.5px;background:#0c1526;border:1px solid var(--line);border-radius:8px;padding:11px 14px;color:#9fe6ff;overflow-x:auto;margin:8px 0;line-height:1.8}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11.5px;color:var(--dim);margin-top:10px}
+.legend span{display:flex;align-items:center;gap:6px}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.sl{fill:none;stroke:rgba(120,220,255,.55);stroke-width:1.4;stroke-dasharray:7 11;animation:flowdash 1s linear infinite}
+@keyframes flowdash{to{stroke-dashoffset:-36}}
+.jet{fill:none;stroke:rgba(255,181,71,.9);stroke-width:2.2;stroke-dasharray:9 7;animation:flowdash 1s linear infinite}
+.wallline{fill:none;stroke:#38d6ff;stroke-width:2.4;stroke-linecap:round;filter:drop-shadow(0 0 4px rgba(56,214,255,.5))}
+.legend-inline{display:flex;gap:18px;flex-wrap:wrap;font-size:11.5px;color:var(--dim);margin-top:8px}
+.legend-inline b{font-weight:700}
+.anno-box{background:rgba(6,14,28,.85);border:1px solid rgba(56,214,255,.25);border-radius:8px;padding:8px 12px;font-size:11.5px;line-height:1.55;color:#c5d8f5}
+.anno-box b{color:var(--cyan);font-weight:700}
+.anno-box.warn{border-color:rgba(255,181,71,.35)}
+.anno-box.warn b{color:var(--amber)}
+.anno-box.pink{border-color:rgba(255,107,157,.35)}
+.anno-box.pink b{color:var(--pink)}
+.hydro-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+@media(max-width:760px){.hydro-grid-2{grid-template-columns:1fr}}
+.regime-chip{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.4px}
+.regime-lam{background:rgba(34,201,160,.18);color:var(--teal);border:1px solid rgba(34,201,160,.5)}
+.regime-trans{background:rgba(255,181,71,.18);color:var(--amber);border:1px solid rgba(255,181,71,.5)}
+.regime-turb{background:rgba(255,107,157,.18);color:var(--pink);border:1px solid rgba(255,107,157,.5)}
+.explain{font-size:12.5px;line-height:1.75;color:#c5d8f5}
+.explain b{color:var(--cyan)}
+.explain .hl{color:var(--amber);font-weight:700}
+.explain .hlp{color:var(--pink);font-weight:700}
+.explain .hlt{color:var(--teal);font-weight:700}
+</style>
+</head>
+<body>
+<div class="app">
+
+<header>
+  <div class="logo"></div>
+  <div>
+    <h1>Flowmeter Measurement Apparatus</h1>
+    <p>Virtual laboratory · Venturi · Orifice · Rotameter · Volumetric Bench · 90° Elbow loss coefficient</p>
+  </div>
+  <div class="badge">Simulation</div>
+</header>
+
+<nav class="tabs">
+  <button class="active" data-tab="rig">⚙️ Apparatus &amp; Controls</button>
+  <button data-tab="flow">📊 Flowmeter Comparison</button>
+  <button data-tab="elbow">🌀 90° Elbow Loss</button>
+  <button data-tab="hydro">🌊 Hydrodynamics</button>
+  <button data-tab="pressure">📉 Pressure Analysis</button>
+  <button data-tab="theory">📐 Theory &amp; Equations</button>
+</nav>
+
+<!-- ============================================================ RIG -->
+<section class="panel active" id="tab-rig">
+  <div class="grid rig-grid">
+    <div class="card">
+      <h2>Apparatus Schematic</h2>
+      <div id="apparatus"></div>
+      <div class="legend">
+        <span><i class="dot" style="background:#2b8fd8"></i> Water</span>
+        <span><i class="dot" style="background:#38d6ff"></i> Flow direction</span>
+        <span><i class="dot" style="background:#ffb547"></i> Tapping point</span>
+        <span><i class="dot" style="background:#ff6b9d"></i> Pressure tapping line</span>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card">
+        <h2>Controls</h2>
+        <div class="controls">
+          <label class="switch">
+            <input type="checkbox" id="pump">
+            <span class="track"></span>
+            <span>Hydraulic Bench Pump</span>
+          </label>
+          <div>
+            <div class="slider-label"><span>Discharge Valve Opening</span><b id="valvePct">0 %</b></div>
+            <input type="range" id="valve" min="0" max="100" value="0">
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="noise" checked>
+            <span class="track"></span>
+            <span>Instrument noise (realistic scatter)</span>
+          </label>
+          <div class="row">
+            <button class="btn primary" id="btnRecord" disabled>＋ Record Reading</button>
+            <button class="btn" id="btnBench" disabled>💧 Volumetric Bench Run</button>
+          </div>
+        </div>
+        <div class="note" id="statusNote">
+          Start the pump and open the discharge valve to begin. Ensure all air bubbles are bled from
+          the manometer tubes before recording.
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Live Readouts</h2>
+        <div class="readouts">
+          <div class="readout"><div class="k">Rotameter</div><div class="v cyan" id="roRot">0.00<span class="u">L/min</span></div></div>
+          <div class="readout"><div class="k">Bench (volumetric)</div><div class="v teal" id="roBench">—<span class="u">L/min</span></div></div>
+          <div class="readout"><div class="k">Venturi Δh</div><div class="v amber" id="roDv">0.0<span class="u">mm</span></div></div>
+          <div class="readout"><div class="k">Orifice Δh</div><div class="v pink" id="roDo">0.0<span class="u">mm</span></div></div>
+          <div class="readout"><div class="k">Pipe velocity</div><div class="v" id="roV">0.000<span class="u">m/s</span></div></div>
+          <div class="readout"><div class="k">Velocity head</div><div class="v" id="roVh">0.00<span class="u">mm</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Manometer Board — Piezometric Head (mm)</h2>
+    <div id="manometer"></div>
+    <div class="legend">
+      <span><b style="color:#38d6ff">A–F</b>&nbsp;Venturi meter</span>
+      <span><b style="color:#ffb547">G–H</b>&nbsp;Orifice meter</span>
+      <span><b style="color:#ff6b9d">I–J</b>&nbsp;90° elbow</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ FLOW -->
+<section class="panel" id="tab-flow">
+  <div class="card">
+    <h2>Experiment 1 — Comparison of Flow Measurement Techniques</h2>
+    <div class="note">
+      Record readings at several flow rates using the <b>Apparatus &amp; Controls</b> tab.
+      Volumetric bench measurement is taken as the reference flow rate.
+    </div>
+    <h3>Recorded Data</h3>
+    <div class="tablewrap">
+      <table id="flowTable">
+        <thead>
+          <tr>
+            <th>#</th><th>Rotameter<br>Q (L/min)</th><th>Bench<br>Q (L/min)</th>
+            <th>h<sub>A</sub> (mm)</th><th>h<sub>C</sub> (mm)</th><th>Δh<sub>V</sub> (mm)</th>
+            <th>Q<sub>Venturi</sub><br>(L/min)</th>
+            <th>h<sub>G</sub> (mm)</th><th>h<sub>H</sub> (mm)</th><th>Δh<sub>O</sub> (mm)</th>
+            <th>Q<sub>Orifice</sub><br>(L/min)</th>
+            <th>Venturi<br>error %</th><th>Orifice<br>error %</th>
+          </tr>
+        </thead>
+        <tbody id="flowBody"></tbody>
+      </table>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn danger" id="btnClearFlow">🗑 Clear Data</button>
+    </div>
+    <h3>Summary &amp; Accuracy</h3>
+    <div id="flowSummary" class="note">No data recorded yet.</div>
+  </div>
+</section>
+
+<!-- ============================================================ ELBOW -->
+<section class="panel" id="tab-elbow">
+  <div class="card">
+    <h2>Experiment 2 — Loss Coefficient of a 90° Elbow</h2>
+    <div class="formula">
+      Δh′ = h<sub>I</sub> − h<sub>J</sub><br>
+      Δh<sub>f</sub> = 4f (L/D) (V²/2g)<br>
+      Δh = Δh′ − Δh<sub>f</sub><br>
+      ΔH = Δh + V₁²/2g − V₂²/2g  =  Δh<br>
+      <b>K = ΔH / (V²/2g)</b>
+    </div>
+    <div class="note">
+      Given constants: <b>D = 26 mm</b>, <b>L = 80 mm</b>, <b>f = 0.0065</b>. Therefore 4f(L/D) = <b>0.0800</b>.
+    </div>
+    <h3>Recorded Data</h3>
+    <div class="tablewrap">
+      <table id="elbowTable">
+        <thead>
+          <tr>
+            <th>#</th><th>Q (L/min)</th><th>V (m/s)</th><th>V²/2g (mm)</th>
+            <th>h<sub>I</sub> (mm)</th><th>h<sub>J</sub> (mm)</th><th>Δh′ (mm)</th>
+            <th>Δh<sub>f</sub> (mm)</th><th>Δh (mm)</th><th>K</th>
+          </tr>
+        </thead>
+        <tbody id="elbowBody"></tbody>
+      </table>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn danger" id="btnClearElbow">🗑 Clear Data</button>
+    </div>
+    <h3>Graph — ΔH vs V²/2g</h3>
+    <div id="elbowPlot"></div>
+    <div class="note" id="elbowSummary">No data recorded yet.</div>
+  </div>
+</section>
+
+<!-- ============================================================ HYDRO -->
+<section class="panel" id="tab-hydro">
+  <div class="card">
+    <h2>Hydrodynamic Parameters — Live</h2>
+    <div class="note" style="margin-top:0">
+      All values computed from the current discharge valve setting on the
+      <b>Apparatus &amp; Controls</b> tab. Open the valve to see the flow regime change.
+    </div>
+    <div class="readouts hydro-readouts">
+      <div class="readout"><div class="k">Reynolds number</div><div class="v cyan" id="hyRe">0</div></div>
+      <div class="readout"><div class="k">Flow regime</div><div class="v" id="hyRegime">—</div></div>
+      <div class="readout"><div class="k">Average velocity V<sub>avg</sub></div><div class="v" id="hyVavg">0.000<span class="u">m/s</span></div></div>
+      <div class="readout"><div class="k">Centerline velocity V<sub>max</sub></div><div class="v teal" id="hyVmax">0.000<span class="u">m/s</span></div></div>
+      <div class="readout"><div class="k">V<sub>max</sub>/V<sub>avg</sub></div><div class="v amber" id="hyRatio">—</div></div>
+      <div class="readout"><div class="k">Entrance length L<sub>e</sub></div><div class="v pink" id="hyLe">0<span class="u">mm</span></div></div>
+      <div class="readout"><div class="k">L<sub>e</sub>/D</div><div class="v" id="hyLeD">—</div></div>
+      <div class="readout"><div class="k">Friction factor f</div><div class="v" id="hyF">—</div></div>
+      <div class="readout"><div class="k">dP/dx (fully dev.)</div><div class="v" id="hyDPdx">0<span class="u">Pa/m</span></div></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Velocity Profile Development — No-Slip, Entrance &amp; Fully Developed</h2>
+    <div class="note" style="margin-top:0">
+      The wall enforces the <b>no-slip condition</b> (u = 0 at r = R). At the pipe inlet the velocity is
+      nearly uniform (plug flow). Viscous shear gradually slows the fluid near the wall and accelerates
+      the core, so the profile sharpens until it becomes <b>fully developed</b> at x = L<sub>e</sub>.
+      For laminar flow, V<sub>max</sub> = 2 V<sub>avg</sub>; for turbulent, V<sub>max</sub> ≈ 1.22 V<sub>avg</sub>.
+      <br><br>
+      <b>Note:</b> the x/D stations are drawn on a <b>schematic (index) scale</b>, evenly spaced for clarity —
+      not to linear scale.
+    </div>
+
+    <h3 style="margin-top:18px">Flow Field — Velocity Magnitude &amp; Streamlines</h3>
+    <div id="flowField2D"></div>
+    <div class="legend-inline">
+      <span><b style="color:#38d6ff">──</b> Pipe wall (no-slip: u = 0)</span>
+      <span><b style="color:#ffb547">──</b> Velocity profile curves</span>
+      <span><b style="color:#22c9a0">●</b> V<sub>max</sub> envelope (centreline)</span>
+      <span><b style="color:#ff6b9d">│</b> End of entrance region (x = L<sub>e</sub>)</span>
+      <span><b style="color:#a78bfa">▸</b> Boundary layer edge δ(x)</span>
+    </div>
+
+    <h3 style="margin-top:18px">Profile Development — Cross-Sectional Views</h3>
+    <div id="hydroProfiles"></div>
+    <div class="legend-inline">
+      <span><b style="color:#38d6ff">──</b> Pipe wall (no-slip: u = 0)</span>
+      <span><b style="color:#ffb547">──</b> Developing profile</span>
+      <span><b style="color:#22c9a0">──</b> Fully developed profile</span>
+      <span><b style="color:#22c9a0">●</b> Centreline V<sub>max</sub></span>
+      <span><b style="color:#ff6b9d">│</b> End of entrance region</span>
+    </div>
+  </div>
+
+  <div class="hydro-grid-2">
+    <div class="card">
+      <h2>Cross-Sectional Profiles — u/V<sub>avg</sub> vs r/R</h2>
+      <div id="hydroCrossSections"></div>
+    </div>
+    <div class="card">
+      <h2>Pressure Distribution — Entrance vs Fully Developed</h2>
+      <div id="hydroPressure"></div>
+      <div style="margin-top:12px" class="anno-box">
+        <b>Bernoulli:</b> where velocity is low, pressure is high — the entrance region (uniform,
+        low‑velocity profile) has the highest pressure.
+        <br><br>
+        <b>Why P drops:</b> viscous shear converts mechanical energy into heat. The entrance
+        region has extra loss because the velocity profile is still rearranging, so dP/dx is
+        steeper there than in the fully developed section.
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Venturi Meter — Flow Field</h2>
+    <div id="venturiFlow"></div>
+    <div class="legend-inline">
+      <span><b style="color:#38d6ff">──</b> Wall</span>
+      <span><b style="color:rgba(120,220,255,.8)">╌╌</b> Streamlines</span>
+      <span><b style="color:#38d6ff">──</b> Static pressure P/P₀</span>
+      <span><b style="color:#ffb547">╌╌</b> Velocity V/V₀</span>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Orifice Meter — Flow Field</h2>
+    <div id="orificeFlow"></div>
+    <div class="legend-inline">
+      <span><b style="color:#38d6ff">──</b> Wall</span>
+      <span><b style="color:rgba(255,181,71,.95)">──</b> Jet boundary / vena contracta</span>
+      <span><b style="color:rgba(255,107,157,.7)">▨</b> Recirculation / dead zone</span>
+      <span><b style="color:#38d6ff">──</b> Static pressure P/P₀</span>
+      <span><b style="color:#ffb547">╌╌</b> Velocity V/V₀</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ PRESSURE ANALYSIS -->
+<section class="panel" id="tab-pressure">
+  <div class="card">
+    <h2>Flow Regime at Each Section — Live</h2>
+    <div class="note" style="margin-top:0">
+      Reynolds number <b>Re = ρVD/μ</b> determines the flow regime:
+      <span class="regime-chip regime-lam">Laminar Re &lt; 2300</span>
+      <span class="regime-chip regime-trans">Transitional 2300 ≤ Re &lt; 4000</span>
+      <span class="regime-chip regime-turb">Turbulent Re ≥ 4000</span>
+      <br>
+      Because the velocity and diameter change at each device, the regime can differ from section to section.
+    </div>
+    <div id="regimeTable"></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Pressure Along the Whole Apparatus — Why P is High at Inlet, Why it Drops</h2>
+    <div class="note" style="margin-top:0">
+      The curve shows the piezometric head at every point along the apparatus.
+      The shaded bands mark the three measuring devices. Pressure <b>always drops</b> in the flow
+      direction — but <b>locally it recovers</b> in the venturi's diverging cone, and <b>never
+      fully recovers</b> after the orifice or the elbow.
+    </div>
+    <div id="fullPressureProfile"></div>
+    <div class="legend-inline">
+      <span><b style="color:#38d6ff">●</b> Tapping point</span>
+      <span><b style="color:#38d6ff">──</b> Piezometric head H(x)</span>
+      <span><b style="color:rgba(56,214,255,.15)">▨</b> Device zone</span>
+      <span><b style="color:#ffb547">╌╌</b> Venturi Δh</span>
+      <span><b style="color:#ff6b9d">╌╌</b> Orifice Δh</span>
+      <span><b style="color:#22c9a0">╌╌</b> Elbow Δh</span>
+    </div>
+  </div>
+
+  <div class="two-col" style="margin-top:16px">
+    <div class="card">
+      <h2>Venturi — Pressure Recovers</h2>
+      <div id="venturiPressure"></div>
+      <div class="anno-box" style="margin-top:12px">
+        <b>Converging:</b> velocity rises, static pressure falls (Bernoulli).<br>
+        <b>Throat:</b> highest velocity, lowest pressure.<br>
+        <b>Diverging:</b> velocity falls, pressure <b>recovers</b> — about 80–90%
+        because the smooth cone suppresses separation. Overall permanent loss is small
+        (C<sub>d</sub> = 0.98).
+      </div>
+    </div>
+    <div class="card">
+      <h2>Orifice — Irreversible Loss</h2>
+      <div id="orificePressure"></div>
+      <div class="anno-box pink" style="margin-top:12px">
+        <b>Plate:</b> the jet contracts sharply and separates at the edges.<br>
+        <b>Vena contracta:</b> minimum pressure, minimum jet area (≈62% of hole).<br>
+        <b>Recovery:</b> only partial — large recirculation zones dissipate energy.
+        Permanent loss is high (C<sub>d</sub> = 0.63).
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>90° Elbow — Loss Coefficient</h2>
+    <div id="elbowPressure"></div>
+    <div class="anno-box warn" style="margin-top:12px">
+      <b>Why P drops at a bend:</b> the fluid must change direction, so the outer wall
+      experiences a favourable pressure gradient and the inner wall an adverse one.
+      The adverse gradient causes <b>separation</b>, which feeds secondary (Dean) vortices
+      and dissipates energy. The drop scales with <b>K · V²/2g</b> with K ≈ 0.84.
+      There is <b>no pressure recovery</b> downstream — the loss is permanent.
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>How Flow Rate Affects Pressure Drop</h2>
+    <div class="note" style="margin-top:0">
+      For incompressible flow through any of these devices, the head loss scales as
+      <b>Δh ∝ Q²</b>. Doubling the flow rate <b>quadruples</b> the pressure drop.
+      That is why the curves below are parabolas, and why flowmeters are calibrated as
+      <b>Q = k √(Δh)</b>.
+    </div>
+    <div id="flowrateEffect"></div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Why the Pressure Behaves This Way — Summary</h2>
+    <div class="two-col">
+      <div class="explain">
+        <p><b>1. Why is P high at the inlet?</b><br>
+        Bernoulli's equation says P + ½ρV² + ρgz = constant. At the inlet the fluid is still
+        nearly uniform (plug-like), so <span class="hl">V is low, therefore P is high</span>.
+        As the flow develops, wall shear and the boundary layer reduce the effective
+        cross-section, so V in the core rises and P falls.</p>
+
+        <p><b>2. Why does P drop through the venturi?</b><br>
+        The converging cone forces V to rise (continuity), so by Bernoulli P must fall. The
+        minimum P is at the <span class="hlt">throat</span>. In the diverging cone V falls
+        again and <span class="hlt">P recovers</span> — almost all of it, because the smooth
+        geometry suppresses separation. Only a small permanent loss remains.</p>
+
+        <p><b>3. Why does P drop much more at the orifice?</b><br>
+        A sharp-edged plate forces the jet to separate. The minimum area is not at the hole
+        but downstream, at the <span class="hlp">vena contracta</span> (≈62% of the hole).
+        So the peak velocity — and therefore the minimum pressure — is even lower than
+        the hole geometry suggests. Downstream, large recirculation zones dissipate
+        energy, so <span class="hlp">pressure does not recover</span>.</p>
+      </div>
+      <div class="explain">
+        <p><b>4. Why does the elbow cause a permanent loss?</b><br>
+        Turning the flow creates an <span class="hl">adverse pressure gradient</span> on the
+        inner wall. The boundary layer there separates, generating secondary (Dean) vortices
+        that convert kinetic energy into heat. The drop is Δh = K·V²/2g with K ≈ 0.84.</p>
+
+        <p><b>5. How does flow rate affect the drops?</b><br>
+        Continuity gives V ∝ Q, so all head losses scale as <b>V²</b>, i.e.
+        <b>Δh ∝ Q²</b>. At low flow rate the drops are small and the flow may be
+        <span class="hlt">laminar</span>; at high flow rate the drops grow quadratically
+        and the flow becomes <span class="hlp">turbulent</span>.</p>
+
+        <p><b>6. Why is the elbow's loss much smaller than the orifice's?</b><br>
+        A 90° elbow changes direction but keeps the same cross-section, so the velocity
+        is never forced above its pipe value. An orifice must pass the whole flow through
+        a much smaller area, so V<sub>peak</sub>/V<sub>pipe</sub> ≈ 2.5, and Δh scales
+        as <b>V²</b> — roughly 6× larger.</p>
+
+        <p><b>7. Where is the flow laminar, transitional, or turbulent?</b><br>
+        It depends on both V and D. At low flow rates the pipe is laminar (Re &lt; 2300)
+        but the throat and vena contracta may already be transitional or turbulent.
+        At high flow rates every section is turbulent. See the live table above.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================ THEORY -->
+<section class="panel" id="tab-theory">
+  <div class="two-col">
+    <div class="card">
+      <h2>Venturi Meter</h2>
+      <div class="formula">q = C<sub>d</sub> · A<sub>t</sub> · [1 − (A<sub>t</sub>/A)²]<sup>−1/2</sup> · √(2g·Δh)</div>
+      <div class="note">C<sub>d</sub> = 0.98 &nbsp;|&nbsp; D<sub>inlet</sub> = 26 mm &nbsp;|&nbsp; D<sub>throat</sub> = 16 mm</div>
+    </div>
+    <div class="card">
+      <h2>Orifice Meter</h2>
+      <div class="formula">Q = C<sub>d</sub> · A<sub>t</sub> · [1 − (A<sub>t</sub>/A)²]<sup>−1/2</sup> · √(2g·Δh)</div>
+      <div class="note">C<sub>d</sub> = 0.63 &nbsp;|&nbsp; D<sub>orifice</sub> = 16 mm &nbsp;|&nbsp; D<sub>upstream</sub> = 26 mm</div>
+    </div>
+    <div class="card">
+      <h2>90° Elbow Loss Coefficient</h2>
+      <div class="formula">ΔH = Δh + V₁²/2g − V₂²/2g<br><br>K = ΔH / (V²/2g)</div>
+      <div class="note">Typical value here: <b>K ≈ 0.84</b>.</div>
+    </div>
+    <div class="card">
+      <h2>Hydrodynamic Entrance Length</h2>
+      <div class="formula">
+Laminar (Re &lt; 2300): L<sub>e</sub>/D ≈ 0.06 · Re<br><br>
+Turbulent (Re &gt; 4000): L<sub>e</sub>/D ≈ 4.4 · Re<sup>1/6</sup>
+      </div>
+    </div>
+    <div class="card">
+      <h2>No-Slip &amp; Velocity Profiles</h2>
+      <div class="formula">
+No-slip: u(r = R) = 0<br><br>
+Laminar: u/V<sub>avg</sub> = 2[1 − (r/R)²], V<sub>max</sub> = 2V<sub>avg</sub><br><br>
+Turbulent (1/7 power): u/V<sub>avg</sub> ≈ 1.22 [1 − r/R]<sup>1/7</sup>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Friction Factor Table (Prandtl, smooth pipe)</h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Re × 10⁴</th><th>0.5</th><th>1.0</th><th>1.5</th><th>2.0</th><th>2.5</th><th>3.0</th><th>3.5</th></tr></thead>
+          <tbody><tr><td><b>f × 10⁻³</b></td><td>9.27</td><td>7.73</td><td>6.96</td><td>6.48</td><td>6.14</td><td>5.88</td><td>5.67</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<script>
+/* ==================================================================
+   PHYSICAL MODEL
+   ================================================================== */
+const G = 9.81;
+const D_PIPE   = 0.026, A_PIPE   = Math.PI/4*D_PIPE*D_PIPE;
+const D_THROAT = 0.016, A_THROAT = Math.PI/4*D_THROAT*D_THROAT;
+const CD_VENTURI = 0.98;
+const CD_ORIFICE = 0.63;
+const CC_ORIFICE = 0.62;
+const K_TRUE     = 0.84;
+const CF         = 0.0800;
+const BOARD_MAX  = 700;
+const Q_MAX      = 20;
+const RHO        = 1000;
+const MU         = 1.0e-3;
+
+function heads(QL){
+  const Q  = QL/60000;
+  const VA = Q/A_PIPE;
+  const VC = Q/A_THROAT;
+  const vhA = VA*VA/(2*G)*1000;
+  const vhC = VC*VC/(2*G)*1000;
+  const dhVideal = Math.max(0, vhC - vhA);
+  const dhV = dhVideal/(CD_VENTURI*CD_VENTURI);
+  const dhO = dhVideal/(CD_ORIFICE*CD_ORIFICE);
+  const vh  = d => (Q/(Math.PI/4*d*d))**2/(2*G)*1000;
+
+  const hA = 650 - 0.10*QL*QL;
+  const hB = hA - (vh(0.0216) - vhA);
+  const hC = hA - dhV;
+  const hD = hA - (vh(0.0200) - vhA);
+  const hE = hA - (vh(0.0220) - vhA);
+  const hF = hA - 0.05*vhA;
+  const hG = hF - 0.08*vhA;
+  const hH = hG - dhO;
+  const hI = hH - 0.08*vhA;
+  const dhElbow = (K_TRUE + CF)*vhA;
+  const hJ = hI - dhElbow;
+
+  return {A:hA,B:hB,C:hC,D:hD,E:hE,F:hF,G:hG,H:hH,I:hI,J:hJ,
+          vhA, dhV, dhO, dhElbow};
+}
+
+function gauss(s){
+  const r = Math.random()+Math.random()+Math.random()+Math.random()
+          + Math.random()+Math.random()-3;
+  return r*s;
+}
+
+function hexToRgb(h){
+  h = h.replace('#','');
+  if(h.length===3) h = h.split('').map(c=>c+c).join('');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+function lerpColor(a,b,t){
+  t = Math.max(0, Math.min(1, t));
+  const A = hexToRgb(a), B = hexToRgb(b);
+  return `rgb(${Math.round(A[0]+(B[0]-A[0])*t)},` +
+         `${Math.round(A[1]+(B[1]-A[1])*t)},` +
+         `${Math.round(A[2]+(B[2]-A[2])*t)})`;
+}
+function flowK(){ return Math.max(0, Math.min(1, state.flow/Q_MAX)); }
+
+/* ---- NEW: even-spacing x/D → pixel mapping (index scale) ---- */
+function makeStationPx(xL, xR, stations, marginPx){
+  marginPx = (marginPx == null) ? 60 : marginPx;
+  const spanPx = (xR - xL) - 2*marginPx;
+  const N = stations.length;
+  const stepPx = spanPx / (N - 1);
+  const lastStep = stations[N-1] - stations[N-2];
+  return function(xd){
+    if(xd <= stations[0]) return xL + marginPx;
+    if(xd <= stations[N-1]){
+      for(let i=0; i<N-1; i++){
+        if(xd <= stations[i+1]){
+          const t = (xd - stations[i])/(stations[i+1] - stations[i]);
+          return xL + marginPx + (i + t)*stepPx;
+        }
+      }
+    }
+    // extrapolate linearly past the last station
+    const extra = (xd - stations[N-1]) / lastStep;
+    return xL + marginPx + spanPx + extra*stepPx;
+  };
+}
+
+const state = {
+  pump:false, valve:0, flow:0, noise:true,
+  flowData:[], elbowData:[], bench:null
+};
+
+/* ==================================================================
+   APPARATUS SVG
+   ================================================================== */
+function buildApparatus(){
+  const svg = `
+<svg viewBox="0 0 860 470" style="width:100%;height:auto;display:block">
+  <defs>
+    <linearGradient id="pipeGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#1c2c47"/>
+      <stop offset="50%" stop-color="#152238"/>
+      <stop offset="100%" stop-color="#1c2c47"/>
+    </linearGradient>
+    <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#4fb3f0"/>
+      <stop offset="100%" stop-color="#1d6fb5"/>
+    </linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect x="30" y="418" width="90" height="42" rx="6" fill="#0e1729" stroke="#2b3d5e"/>
+  <rect x="34" y="432" width="82" height="24" rx="4" fill="url(#waterGrad)" opacity=".65"/>
+  <text x="75" y="475" fill="#8fa3c4" font-size="10" text-anchor="middle">SUMP</text>
+  <path d="M75,400 L640,400 L640,140 L780,140 L780,430"
+        fill="none" stroke="url(#pipeGrad)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M75,400 L640,400 L640,140 L780,140 L780,430"
+        fill="none" stroke="#2b3d5e" stroke-width="38" stroke-linecap="round"
+        stroke-linejoin="round" opacity=".35" style="mix-blend-mode:screen"/>
+  <path id="flowLine" d="M75,400 L640,400 L640,140 L780,140 L780,430"
+        fill="none" stroke="#38d6ff" stroke-width="4" stroke-linecap="round"
+        stroke-dasharray="14 20" opacity=".9" filter="url(#glow)"/>
+  <path d="M130,382 L170,382 L215,392 L240,392 L285,382 L340,382
+           L340,418 L285,418 L240,408 L215,408 L170,418 L130,418 Z"
+        fill="#16233a" stroke="#38d6ff" stroke-width="1.6" opacity=".95"/>
+  <text x="235" y="452" fill="#38d6ff" font-size="11" text-anchor="middle">VENTURI METER</text>
+  <rect x="414" y="378" width="8" height="44" fill="#ffb547" opacity=".9" rx="1"/>
+  <rect x="428" y="378" width="8" height="44" fill="#ffb547" opacity=".9" rx="1"/>
+  <text x="425" y="452" fill="#ffb547" font-size="11" text-anchor="middle">ORIFICE</text>
+  <path d="M640,400 L640,360" stroke="#ff6b9d" stroke-width="3" fill="none" opacity=".8"/>
+  <circle cx="640" cy="400" r="22" fill="none" stroke="#ff6b9d" stroke-width="1.6" opacity=".55" stroke-dasharray="5 4"/>
+  <text x="640" y="470" fill="#ff6b9d" font-size="11" text-anchor="middle">90° ELBOW</text>
+  <path d="M624,180 L656,180 L662,330 L618,330 Z" fill="#0f1a2e" stroke="#22c9a0" stroke-width="1.6" opacity=".95"/>
+  <g id="floatGroup">
+    <rect id="floatBody" x="627" y="300" width="26" height="11" rx="3" fill="#22c9a0"/>
+  </g>
+  <text x="640" y="352" fill="#22c9a0" font-size="11" text-anchor="middle">ROTAMETER</text>
+  <text x="700" y="200" fill="#8fa3c4" font-size="10">Scale</text>
+  <line x1="668" y1="185" x2="668" y2="330" stroke="#8fa3c4" stroke-width="1"/>
+  ${[0,1,2,3,4,5].map(i=>`<line x1="668" y1="${185+i*29}" x2="676" y2="${185+i*29}" stroke="#8fa3c4" stroke-width="1"/>`).join('')}
+  <circle cx="780" cy="240" r="14" fill="#16233a" stroke="#38d6ff" stroke-width="1.8"/>
+  <line x1="770" y1="230" x2="790" y2="250" stroke="#38d6ff" stroke-width="2.4"/>
+  <line x1="790" y1="230" x2="770" y2="250" stroke="#38d6ff" stroke-width="2.4"/>
+  <text x="818" y="244" fill="#8fa3c4" font-size="10">Discharge</text>
+  <text x="75" y="392" fill="#8fa3c4" font-size="10" text-anchor="middle">Supply</text>
+  ${tapping(140,382,'A')}
+  ${tapping(190,382,'B')}
+  ${tapping(227,392,'C')}
+  ${tapping(265,382,'D')}
+  ${tapping(300,382,'E')}
+  ${tapping(332,382,'F')}
+  ${tapping(392,382,'G')}
+  ${tapping(421,378,'H')}
+  ${tapping(560,382,'I')}
+  ${tapping(640,352,'J')}
+  <path d="M140,375 C140,300 300,250 420,250" stroke="#ff6b9d" stroke-width="1" fill="none" opacity=".28"/>
+  <path d="M640,345 C600,300 500,250 440,250" stroke="#ff6b9d" stroke-width="1" fill="none" opacity=".28"/>
+  <text x="440" y="244" fill="#ff6b9d" font-size="10" opacity=".8">→ to manometer board</text>
+</svg>`;
+  function tapping(x,y,label){
+    const c = (label==='G'||label==='H') ? '#ffb547' : (label==='I'||label==='J') ? '#ff6b9d' : '#38d6ff';
+    return `<g>
+      <circle cx="${x}" cy="${y}" r="4.5" fill="${c}" stroke="#0a1020" stroke-width="1.4"/>
+      <text x="${x}" y="${y-11}" fill="${c}" font-size="12" font-weight="700" text-anchor="middle"
+            font-family="Consolas,monospace">${label}</text>
+    </g>`;
+  }
+  document.getElementById('apparatus').innerHTML = svg;
+}
+
+/* ==================================================================
+   MANOMETER BOARD
+   ================================================================== */
+const TUBES = [{k:'A'},{k:'B'},{k:'C'},{k:'D'},{k:'E'},{k:'F'},{k:'G'},{k:'H'},{k:'I'},{k:'J'}];
+const MANO = {leftM:90, rightM:70, pitch:62, tubeW:44, top:90, bot:510, H:640};
+MANO.W = MANO.leftM + TUBES.length*MANO.pitch + MANO.rightM;
+MANO.scale = (MANO.bot - MANO.top)/BOARD_MAX;
+function tubeX(i){ return MANO.leftM + i*MANO.pitch + (MANO.pitch - MANO.tubeW)/2; }
+
+function buildManometer(){
+  const {leftM,rightM,pitch,tubeW,top,bot,H,W,scale} = MANO;
+  const colors = {A:'#38d6ff',B:'#38d6ff',C:'#38d6ff',D:'#38d6ff',E:'#38d6ff',F:'#38d6ff',G:'#ffb547',H:'#ffb547',I:'#ff6b9d',J:'#ff6b9d'};
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" font-family="Consolas,'Courier New',monospace">`;
+  s += `<defs>
+    <linearGradient id="wg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#8fe6ff"/>
+      <stop offset="6%"   stop-color="#4ab8f0"/>
+      <stop offset="60%"  stop-color="#2079c8"/>
+      <stop offset="100%" stop-color="#0e4d8f"/>
+    </linearGradient>
+    <linearGradient id="glassHi" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="rgba(255,255,255,.10)"/>
+      <stop offset="40%"  stop-color="rgba(255,255,255,0)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,.04)"/>
+    </linearGradient>
+    <filter id="wglow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="txtglow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.6" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>`;
+  s += `<rect x="6" y="6" width="${W-12}" height="${H-12}" rx="14" fill="#0b1424" stroke="#1e2b47" stroke-width="1"/>`;
+  s += `<text x="${W/2}" y="40" fill="#38d6ff" font-size="18" font-weight="700" text-anchor="middle" letter-spacing="2.4" filter="url(#txtglow)">PIEZOMETRIC HEAD  (mm)</text>`;
+  s += `<line x1="${W*0.22}" y1="52" x2="${W*0.78}" y2="52" stroke="rgba(56,214,255,.28)" stroke-width="1"/>`;
+
+  const scaleX = leftM - 14;
+  for(let v=0; v<=BOARD_MAX; v+=25){
+    const y = bot - v*scale;
+    const major = v % 100 === 0;
+    const mid   = v % 50 === 0;
+    const len   = major ? 20 : (mid ? 12 : 7);
+    s += `<line x1="${scaleX-len}" y1="${y.toFixed(1)}" x2="${scaleX}" y2="${y.toFixed(1)}" stroke="${major ? '#7ea0cc' : '#3f5a80'}" stroke-width="${major ? 1.8 : 1}"/>`;
+    if(major || mid){
+      s += `<text x="${scaleX-26}" y="${(y+5).toFixed(1)}" fill="${major ? '#d6e4fb' : '#93a8c8'}" font-size="${major ? 14 : 12}" font-weight="${major ? 700 : 500}" text-anchor="end">${v}</text>`;
+    }
+  }
+  s += `<line x1="${scaleX}" y1="${top-14}" x2="${scaleX}" y2="${bot+14}" stroke="#5a7ba8" stroke-width="1.6"/>`;
+  s += `<text x="${scaleX-26}" y="${top-24}" fill="#7ea0cc" font-size="12" text-anchor="end" letter-spacing="1">mm</text>`;
+
+  const rScaleX = leftM + TUBES.length*pitch + 6;
+  for(let v=0; v<=BOARD_MAX; v+=25){
+    const y = bot - v*scale;
+    const major = v % 100 === 0;
+    const mid   = v % 50 === 0;
+    const len   = major ? 20 : (mid ? 12 : 7);
+    s += `<line x1="${rScaleX}" y1="${y.toFixed(1)}" x2="${rScaleX+len}" y2="${y.toFixed(1)}" stroke="${major ? '#7ea0cc' : '#3f5a80'}" stroke-width="${major ? 1.8 : 1}"/>`;
+    if(major || mid){
+      s += `<text x="${rScaleX+len+6}" y="${(y+5).toFixed(1)}" fill="${major ? '#d6e4fb' : '#93a8c8'}" font-size="${major ? 14 : 12}" font-weight="${major ? 700 : 500}" text-anchor="start">${v}</text>`;
+    }
+  }
+  s += `<line x1="${rScaleX}" y1="${top-14}" x2="${rScaleX}" y2="${bot+14}" stroke="#5a7ba8" stroke-width="1.6"/>`;
+
+  for(let v=0; v<=BOARD_MAX; v+=100){
+    const y = bot - v*scale;
+    s += `<line x1="${scaleX+4}" y1="${y.toFixed(1)}" x2="${rScaleX-4}" y2="${y.toFixed(1)}" stroke="rgba(90,123,168,.18)" stroke-width="1" stroke-dasharray="3 6"/>`;
+  }
+
+  TUBES.forEach((t,i)=>{
+    const x = tubeX(i);
+    const cx = x + tubeW/2;
+    const c = colors[t.k];
+    s += `<rect x="${x-2}" y="${top-14}" width="${tubeW+4}" height="${bot-top+28}" rx="10" fill="#0a1322" stroke="#2b3d5e" stroke-width="1.4"/>`;
+    s += `<rect x="${x}" y="${top}" width="${tubeW}" height="${bot-top}" rx="7" fill="#060e1c" stroke="rgba(56,214,255,.10)" stroke-width="1"/>`;
+    s += `<rect x="${x+4}" y="${top+4}" width="${tubeW*0.22}" height="${bot-top-8}" rx="4" fill="url(#glassHi)"/>`;
+    s += `<rect id="w_${t.k}" x="${x+2}" y="${bot}" width="${tubeW-4}" height="0" rx="5" fill="url(#wg)" filter="url(#wglow)"/>`;
+    s += `<ellipse id="m_${t.k}" cx="${cx}" cy="${bot}" rx="${(tubeW-8)/2}" ry="3.4" fill="#b6efff" opacity="0"/>`;
+    s += `<line x1="${cx}" y1="${top+6}" x2="${cx}" y2="${bot-6}" stroke="rgba(34,48,77,.55)" stroke-width=".8"/>`;
+    s += `<text x="${cx}" y="${bot+34}" fill="${c}" font-size="22" font-weight="800" text-anchor="middle" filter="url(#txtglow)">${t.k}</text>`;
+    s += `<rect x="${x-2}" y="${bot+44}" width="${tubeW+4}" height="28" rx="7" fill="rgba(6,14,28,.95)" stroke="${c}" stroke-opacity=".45" stroke-width="1.2"/>`;
+    s += `<text id="v_${t.k}" x="${cx}" y="${bot+64}" fill="#eaf6ff" font-size="15" font-weight="700" text-anchor="middle">—</text>`;
+  });
+
+  const groups = [
+    {from:0, to:5, color:'#38d6ff', label:'VENTURI'},
+    {from:6, to:7, color:'#ffb547', label:'ORIFICE'},
+    {from:8, to:9, color:'#ff6b9d', label:'90° ELBOW'}
+  ];
+  const bandY = bot + 86;
+  groups.forEach(g=>{
+    const x1 = tubeX(g.from) - 6;
+    const x2 = tubeX(g.to) + MANO.tubeW + 6;
+    s += `<rect x="${x1}" y="${bandY}" width="${x2-x1}" height="24" rx="12" fill="${g.color}" fill-opacity=".10" stroke="${g.color}" stroke-opacity=".42" stroke-width="1"/>`;
+    s += `<text x="${(x1+x2)/2}" y="${bandY+16.5}" fill="${g.color}" font-size="12" font-weight="800" letter-spacing="1.6" text-anchor="middle">${g.label}</text>`;
+  });
+
+  s += `</svg>`;
+  document.getElementById('manometer').innerHTML = s;
+}
+
+function updateManometer(readings){
+  const {bot, scale} = MANO;
+  TUBES.forEach((t)=>{
+    const h  = Math.max(0, Math.min(BOARD_MAX, readings[t.k]));
+    const y  = bot - h*scale;
+    const rect = document.getElementById('w_'+t.k);
+    const men  = document.getElementById('m_'+t.k);
+    const lbl  = document.getElementById('v_'+t.k);
+    if(rect){
+      rect.setAttribute('y', y.toFixed(1));
+      rect.setAttribute('height', Math.max(0, bot - y).toFixed(1));
+    }
+    if(men){
+      men.setAttribute('cy', y.toFixed(1));
+      men.setAttribute('opacity', h > 1.5 ? '0.85' : '0');
+    }
+    if(lbl) lbl.textContent = h.toFixed(1);
+  });
+}
+
+function currentReadings(){
+  const h = heads(state.flow);
+  const out = {};
+  TUBES.forEach(t=>{
+    let v = h[t.k];
+    if(state.noise) v += gauss(0.35);
+    out[t.k] = Math.max(0, v);
+  });
+  return out;
+}
+
+function updateAll(){
+  state.flow = state.pump ? Q_MAX*(state.valve/100) : 0;
+  const r = currentReadings();
+  updateManometer(r);
+
+  const rot = state.flow * (state.noise ? (1+gauss(0.008)) : 1);
+  document.getElementById('roRot').innerHTML = rot.toFixed(2)+'<span class="u">L/min</span>';
+  const benchVal = state.bench !== null ? state.bench.toFixed(2) : '—';
+  document.getElementById('roBench').innerHTML = benchVal+'<span class="u">L/min</span>';
+  document.getElementById('roDv').innerHTML = (r.A - r.C).toFixed(1)+'<span class="u">mm</span>';
+  document.getElementById('roDo').innerHTML = (r.G - r.H).toFixed(1)+'<span class="u">mm</span>';
+
+  const V = (state.flow/60000)/A_PIPE;
+  document.getElementById('roV').innerHTML = V.toFixed(4)+'<span class="u">m/s</span>';
+  document.getElementById('roVh').innerHTML = (V*V/(2*G)*1000).toFixed(2)+'<span class="u">mm</span>';
+
+  const fg = document.getElementById('floatBody');
+  if(fg){
+    const frac = Math.min(1, state.flow/Q_MAX);
+    fg.setAttribute('y', 315 - frac*115);
+  }
+  const fl = document.getElementById('flowLine');
+  if(fl){
+    fl.style.animation = state.flow > 0.2
+      ? `dashflow ${Math.max(0.25, 2.2 - state.flow*0.1)}s linear infinite`
+      : 'none';
+    fl.setAttribute('opacity', state.flow>0.2 ? '0.9' : '0.15');
+  }
+
+  document.getElementById('btnRecord').disabled = state.flow < 0.5;
+  document.getElementById('btnBench').disabled  = state.flow < 0.5;
+
+  const note = document.getElementById('statusNote');
+  if(!state.pump){
+    note.textContent = 'Pump is OFF. Start the hydraulic bench pump to supply water.';
+  }else if(state.valve < 1){
+    note.textContent = 'Pump running, discharge valve closed. Open the valve to establish flow.';
+  }else if(state.flow > Q_MAX*0.97){
+    note.textContent = 'Near maximum flow. Check that no air bubbles are trapped in the manometer tubes.';
+  }else{
+    note.textContent = 'Flow is steady. Record readings or run a volumetric bench measurement.';
+  }
+
+  updateHydro();
+  updatePressureTab();
+}
+
+const styleEl = document.createElement('style');
+styleEl.textContent = `@keyframes dashflow{to{stroke-dashoffset:-340;}}`;
+document.head.appendChild(styleEl);
+
+function venturiFlow(dh_mm){
+  const dh = dh_mm/1000;
+  if(dh <= 0) return 0;
+  const beta2 = (A_THROAT/A_PIPE)**2;
+  return CD_VENTURI*A_THROAT*Math.pow(1-beta2,-0.5)*Math.sqrt(2*G*dh)*60000;
+}
+function orificeFlow(dh_mm){
+  const dh = dh_mm/1000;
+  if(dh <= 0) return 0;
+  const beta2 = (A_THROAT/A_PIPE)**2;
+  return CD_ORIFICE*A_THROAT*Math.pow(1-beta2,-0.5)*Math.sqrt(2*G*dh)*60000;
+}
+
+document.getElementById('btnRecord').addEventListener('click', ()=>{
+  const r = currentReadings();
+  const rot = state.flow*(state.noise ? (1+gauss(0.008)) : 1);
+  const bench = state.bench !== null ? state.bench : state.flow;
+  const dhV = Math.max(0, r.A - r.C);
+  const dhO = Math.max(0, r.G - r.H);
+  const qV  = venturiFlow(dhV);
+  const qO  = orificeFlow(dhO);
+  state.flowData.push({rot, bench, hA:r.A, hC:r.C, dhV, qV, hG:r.G, hH:r.H, dhO, qO});
+
+  const V  = (bench/60000)/A_PIPE;
+  const vh = V*V/(2*G)*1000;
+  const dhP = Math.max(0, r.I - r.J);
+  const dhf = CF*vh;
+  const dh  = dhP - dhf;
+  const K   = vh > 0.05 ? dh/vh : 0;
+  state.elbowData.push({Q:bench, V, vh, hI:r.I, hJ:r.J, dhP, dhf, dh, K});
+  state.bench = null;
+  renderFlowTable();
+  renderElbowTable();
+  updateAll();
+});
+
+document.getElementById('btnBench').addEventListener('click', ()=>{
+  const QL = state.flow;
+  const Vmeas = 10;
+  const tTrue = Vmeas/(QL/60);
+  const tMeas = tTrue*(1+gauss(0.006));
+  state.bench = Vmeas/(tMeas/60);
+  updateAll();
+});
+
+function renderFlowTable(){
+  const tb = document.getElementById('flowBody');
+  if(!state.flowData.length){
+    tb.innerHTML = `<tr><td colspan="13" class="empty">No readings recorded yet.</td></tr>`;
+    document.getElementById('flowSummary').textContent = 'No data recorded yet.';
+    return;
+  }
+  tb.innerHTML = state.flowData.map((d,i)=>{
+    const eV = d.bench>0 ? (d.qV-d.bench)/d.bench*100 : 0;
+    const eO = d.bench>0 ? (d.qO-d.bench)/d.bench*100 : 0;
+    const col = v => Math.abs(v)<5 ? 'var(--teal)' : (Math.abs(v)<12 ? 'var(--amber)' : 'var(--pink)');
+    return `<tr>
+      <td>${i+1}</td><td class="num">${d.rot.toFixed(2)}</td><td class="num">${d.bench.toFixed(2)}</td>
+      <td class="num">${d.hA.toFixed(1)}</td><td class="num">${d.hC.toFixed(1)}</td><td class="num">${d.dhV.toFixed(1)}</td>
+      <td class="num" style="color:var(--cyan)">${d.qV.toFixed(2)}</td>
+      <td class="num">${d.hG.toFixed(1)}</td><td class="num">${d.hH.toFixed(1)}</td><td class="num">${d.dhO.toFixed(1)}</td>
+      <td class="num" style="color:var(--amber)">${d.qO.toFixed(2)}</td>
+      <td class="num" style="color:${col(eV)}">${eV>=0?'+':''}${eV.toFixed(1)}</td>
+      <td class="num" style="color:${col(eO)}">${eO>=0?'+':''}${eO.toFixed(1)}</td>
+    </tr>`;
+  }).join('');
+  const n = state.flowData.length;
+  const avgV = state.flowData.reduce((a,d)=>a+Math.abs(d.qV-d.bench)/d.bench,0)/n*100;
+  const avgO = state.flowData.reduce((a,d)=>a+Math.abs(d.qO-d.bench)/d.bench,0)/n*100;
+  const avgR = state.flowData.reduce((a,d)=>a+Math.abs(d.rot-d.bench)/d.bench,0)/n*100;
+  document.getElementById('flowSummary').innerHTML = `
+    <b>${n}</b> data point(s) recorded.<br>
+    Mean absolute deviation: Rotameter <b style="color:var(--teal)">${avgR.toFixed(2)}%</b>,
+    Venturi <b style="color:var(--cyan)">${avgV.toFixed(2)}%</b>,
+    Orifice <b style="color:var(--amber)">${avgO.toFixed(2)}%</b>.
+  `;
+}
+
+function renderElbowTable(){
+  const tb = document.getElementById('elbowBody');
+  if(!state.elbowData.length){
+    tb.innerHTML = `<tr><td colspan="10" class="empty">No readings recorded yet.</td></tr>`;
+    document.getElementById('elbowSummary').textContent = 'No data recorded yet.';
+    document.getElementById('elbowPlot').innerHTML = '';
+    return;
+  }
+  tb.innerHTML = state.elbowData.map((d,i)=>`<tr>
+      <td>${i+1}</td><td class="num">${d.Q.toFixed(2)}</td><td class="num">${d.V.toFixed(4)}</td><td class="num">${d.vh.toFixed(3)}</td>
+      <td class="num">${d.hI.toFixed(1)}</td><td class="num">${d.hJ.toFixed(1)}</td><td class="num">${d.dhP.toFixed(2)}</td>
+      <td class="num">${d.dhf.toFixed(3)}</td><td class="num">${d.dh.toFixed(2)}</td>
+      <td class="num" style="color:var(--cyan);font-weight:700">${d.K.toFixed(4)}</td>
+    </tr>`).join('');
+
+  const pts = state.elbowData.filter(d=>d.vh>0.05);
+  let slope=0, intercept=0, r2=0;
+  if(pts.length>=2){
+    const n=pts.length;
+    const sx = pts.reduce((a,d)=>a+d.vh,0);
+    const sy = pts.reduce((a,d)=>a+d.dh,0);
+    const sxx= pts.reduce((a,d)=>a+d.vh*d.vh,0);
+    const sxy= pts.reduce((a,d)=>a+d.vh*d.dh,0);
+    slope = (n*sxy - sx*sy)/(n*sxx - sx*sx);
+    intercept = (sy - slope*sx)/n;
+    const ybar = sy/n;
+    const ssTot = pts.reduce((a,d)=>a+(d.dh-ybar)**2,0);
+    const ssRes = pts.reduce((a,d)=>a+(d.dh-(slope*d.vh+intercept))**2,0);
+    r2 = ssTot>0 ? 1-ssRes/ssTot : 1;
+  }
+  const Ks = pts.map(d=>d.K);
+  const Kavg = Ks.length ? Ks.reduce((a,b)=>a+b,0)/Ks.length : 0;
+  const Ksd  = Ks.length>1 ? Math.sqrt(Ks.reduce((a,b)=>a+(b-Kavg)**2,0)/(Ks.length-1)) : 0;
+  document.getElementById('elbowSummary').innerHTML = `
+    <b>${state.elbowData.length}</b> data point(s).<br>
+    Least‑squares fit: ΔH = <b style="color:var(--cyan)">${slope.toFixed(4)}</b>·(V²/2g) + ${intercept.toFixed(3)} (R²=${r2.toFixed(4)})<br>
+    Mean loss coefficient <b style="color:var(--teal)">K = ${Kavg.toFixed(4)}</b> ± ${Ksd.toFixed(4)}
+  `;
+  drawElbowPlot(pts, slope, intercept, r2);
+}
+
+function drawElbowPlot(pts, slope, intercept, r2){
+  const W=680, H=380, mL=70, mR=30, mT=25, mB=55;
+  const pw = W-mL-mR, ph = H-mT-mB;
+  if(!pts.length){ document.getElementById('elbowPlot').innerHTML=''; return; }
+  const xmax = Math.max(...pts.map(p=>p.vh))*1.15 || 1;
+  const ymax = Math.max(...pts.map(p=>p.dh))*1.15 || 1;
+  const X = v => mL + (v/xmax)*pw;
+  const Y = v => mT + ph - (v/ymax)*ph;
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
+    <rect x="0" y="0" width="${W}" height="${H}" fill="#0d1729" rx="10"/>`;
+  for(let i=0;i<=5;i++){
+    const gx = mL + pw*i/5, gy = mT + ph*i/5;
+    s += `<line x1="${gx}" y1="${mT}" x2="${gx}" y2="${mT+ph}" stroke="#1b2a45" stroke-width="1"/>`;
+    s += `<line x1="${mL}" y1="${gy}" x2="${mL+pw}" y2="${gy}" stroke="#1b2a45" stroke-width="1"/>`;
+    s += `<text x="${gx}" y="${mT+ph+18}" fill="#8fa3c4" font-size="10" text-anchor="middle" font-family="Consolas,monospace">${(xmax*i/5).toFixed(2)}</text>`;
+    s += `<text x="${mL-10}" y="${gy+3.5}" fill="#8fa3c4" font-size="10" text-anchor="end" font-family="Consolas,monospace">${(ymax*i/5).toFixed(2)}</text>`;
+  }
+  s += `<line x1="${mL}" y1="${mT+ph}" x2="${mL+pw}" y2="${mT+ph}" stroke="#3d5680" stroke-width="1.6"/>`;
+  s += `<line x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT+ph}" stroke="#3d5680" stroke-width="1.6"/>`;
+  s += `<text x="${mL+pw/2}" y="${H-10}" fill="#38d6ff" font-size="12" text-anchor="middle" font-weight="600">Velocity head  V²/2g  (mm)</text>`;
+  s += `<text x="16" y="${mT+ph/2}" fill="#38d6ff" font-size="12" text-anchor="middle" font-weight="600" transform="rotate(-90,16,${mT+ph/2})">Piezometric head  ΔH  (mm)</text>`;
+  if(slope>0){
+    const x2=xmax, y2=slope*xmax+intercept;
+    s += `<line x1="${X(0)}" y1="${Y(Math.max(0,intercept))}" x2="${X(x2)}" y2="${Y(Math.min(ymax,y2))}" stroke="#22c9a0" stroke-width="2" stroke-dasharray="7 5" opacity=".85"/>`;
+  }
+  pts.forEach(p=>{
+    s += `<circle cx="${X(p.vh)}" cy="${Y(p.dh)}" r="6" fill="#38d6ff" stroke="#0a1020" stroke-width="2"/>`;
+  });
+  s += `<rect x="${mL+pw-232}" y="${mT+14}" width="222" height="52" rx="7" fill="#0a1220" stroke="#2b3d5e"/>`;
+  s += `<text x="${mL+pw-120}" y="${mT+36}" fill="#dfe8f7" font-size="12" text-anchor="middle" font-family="Consolas,monospace">y = ${slope.toFixed(4)}x ${intercept>=0?'+':'−'} ${Math.abs(intercept).toFixed(3)}</text>`;
+  s += `<text x="${mL+pw-120}" y="${mT+55}" fill="#8fa3c4" font-size="11.5" text-anchor="middle" font-family="Consolas,monospace">R² = ${r2.toFixed(4)}</text>`;
+  s += `</svg>`;
+  document.getElementById('elbowPlot').innerHTML = s;
+}
+
+document.getElementById('btnClearFlow').addEventListener('click', ()=>{ state.flowData=[]; renderFlowTable(); });
+document.getElementById('btnClearElbow').addEventListener('click', ()=>{ state.elbowData=[]; renderElbowTable(); });
+
+document.getElementById('pump').addEventListener('change', e=>{ state.pump = e.target.checked; updateAll(); });
+document.getElementById('valve').addEventListener('input', e=>{
+  state.valve = +e.target.value;
+  document.getElementById('valvePct').textContent = state.valve+' %';
+  state.bench = null;
+  updateAll();
+});
+document.getElementById('noise').addEventListener('change', e=>{ state.noise = e.target.checked; updateAll(); });
+
+document.querySelectorAll('nav.tabs button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('tab-'+b.dataset.tab).classList.add('active');
+    if(b.dataset.tab==='elbow') renderElbowTable();
+    if(b.dataset.tab==='flow')  renderFlowTable();
+    if(b.dataset.tab==='hydro') updateHydro(true);
+    if(b.dataset.tab==='pressure') updatePressureTab(true);
+  });
+});
+
+/* ==================================================================
+   HYDRODYNAMICS
+   ================================================================== */
+const smooth = t => t*t*(3-2*t);
+
+function hydroState(){
+  const QL = state.flow;
+  const Q  = QL/60000;
+  const Vavg = Q/A_PIPE;
+  const Re   = RHO*Vavg*D_PIPE/MU;
+
+  let regime, VmaxRatio, profN;
+  if(Re < 2300){ regime='Laminar'; VmaxRatio=2.0; profN=1; }
+  else if(Re < 4000){
+    regime='Transitional';
+    const t=(Re-2300)/(4000-2300);
+    VmaxRatio = 2.0 - t*0.78; profN = 1 + t*6;
+  } else { regime='Turbulent'; VmaxRatio=1.22; profN=7; }
+  if(Re < 1) VmaxRatio = 2.0;
+
+  const Le_D = Re < 2300 ? 0.06*Re : 4.4*Math.pow(Math.max(Re,1), 1/6);
+  const Le = Le_D*D_PIPE;
+  let f;
+  if(Re < 1) f = 0;
+  else if(Re < 2300) f = 64/Re;
+  else f = 0.316*Math.pow(Re,-0.25);
+  const dPdx = f*(1/D_PIPE)*(RHO*Vavg*Vavg/2);
+  const Vmax = VmaxRatio*Vavg;
+  return {QL, Q, Vavg, Re, regime, VmaxRatio, profN, Le_D, Le, f, dPdx, Vmax};
+}
+
+function profileShape(rr, z, isLaminar, n){
+  const zc = Math.max(0, Math.min(1, z));
+  let uFD;
+  if(isLaminar) uFD = 2*(1 - rr*rr);
+  else uFD = (1 + 1/n) * Math.pow(Math.max(0, 1 - Math.abs(rr)), 1/n);
+  return (1-zc)*1 + zc*uFD;
+}
+
+/* ------------------------------------------------------------------
+   FLOW FIELD 2D
+   ------------------------------------------------------------------ */
+let flowFieldBuilt = false;
+
+function buildFlowField2D(){
+  const W = 940, H = 380;
+  const xL = 70, xR = 900;
+  const yAxis = 150;
+  const R = 80;
+
+  let s = `<svg id="ffSVG" viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block"
+               font-family="Consolas,monospace">`;
+
+  s += `<defs>
+    <linearGradient id="ffWall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#122a44"/>
+      <stop offset="50%"  stop-color="#0b1524"/>
+      <stop offset="100%" stop-color="#122a44"/>
+    </linearGradient>
+    <linearGradient id="ffVel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#0d1e33"/>
+      <stop offset="40%"  stop-color="#144a72"/>
+      <stop offset="70%"  stop-color="#1d7fd6"/>
+      <stop offset="100%" stop-color="#38d6ff"/>
+    </linearGradient>
+    <radialGradient id="ffCore" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%"  stop-color="rgba(56,214,255,.55)"/>
+      <stop offset="100%" stop-color="rgba(56,214,255,0)"/>
+    </radialGradient>
+    <filter id="ffGlow"><feGaussianBlur stdDeviation="2.2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="#08121f" rx="10"/>`;
+  s += `<rect x="${xL}" y="${yAxis-R}" width="${xR-xL}" height="${2*R}" fill="url(#ffWall)"/>`;
+
+  const N_ROWS = 40;
+  for(let k=0; k<N_ROWS; k++){
+    const rr = -1 + (2*k+1)/N_ROWS;
+    const yy = yAxis + rr*R;
+    const bandH = (2*R)/N_ROWS + 0.5;
+    s += `<rect id="ffBand_${k}" x="${xL}" y="${yy.toFixed(1)}" width="${xR-xL}" height="${bandH.toFixed(1)}"
+             fill="rgba(56,214,255,0)" />`;
+  }
+
+  s += `<ellipse id="ffCore" cx="${(xL+xR)/2}" cy="${yAxis}" rx="${(xR-xL)*0.5}" ry="${R*0.18}"
+           fill="url(#ffCore)"/>`;
+
+  for(let i=0; i<7; i++){
+    s += `<path id="ffStream_${i}" class="sl" d=""
+             stroke="rgba(120,220,255,.55)" stroke-width="1.4"/>`;
+  }
+
+  s += `<line x1="${xL}" y1="${yAxis-R}" x2="${xR}" y2="${yAxis-R}"
+           stroke="#38d6ff" stroke-width="3" stroke-linecap="round" filter="url(#ffGlow)"/>`;
+  s += `<line x1="${xL}" y1="${yAxis+R}" x2="${xR}" y2="${yAxis+R}"
+           stroke="#38d6ff" stroke-width="3" stroke-linecap="round" filter="url(#ffGlow)"/>`;
+  s += `<line x1="${xL}" y1="${yAxis}" x2="${xR}" y2="${yAxis}"
+           stroke="rgba(120,220,255,.22)" stroke-width="1" stroke-dasharray="5 7"/>`;
+
+  s += `<text x="${xL+10}" y="${yAxis-R-12}" fill="#38d6ff" font-size="11.5"
+           font-weight="700">no-slip wall: u = 0</text>`;
+  s += `<text x="${xL+10}" y="${yAxis+R+22}" fill="#38d6ff" font-size="11.5"
+           font-weight="700">no-slip wall: u = 0</text>`;
+
+  s += `<path id="ffBLu" fill="none" stroke="#a78bfa" stroke-width="1.6"
+           stroke-dasharray="5 4" opacity=".9"/>`;
+  s += `<path id="ffBLl" fill="none" stroke="#a78bfa" stroke-width="1.6"
+           stroke-dasharray="5 4" opacity=".9"/>`;
+
+  /* ---- EVEN-SPACING station mapping ---- */
+  const stationsXD = [0, 1, 2, 4, 8, 16, 32, 64, 128];
+  const stationPx = makeStationPx(xL, xR, stationsXD, 60);
+  const labelY = yAxis + R + 40;
+
+  stationsXD.forEach((xd, i)=>{
+    const x = stationPx(xd);
+    s += `<line x1="${x}" y1="${yAxis-R-6}" x2="${x}" y2="${yAxis+R+6}"
+             stroke="rgba(120,220,255,.22)" stroke-width="1"/>`;
+    s += `<path id="ffProf_${i}" d="" fill="none" stroke="#ffb547" stroke-width="1.8" filter="url(#ffGlow)"/>`;
+    s += `<circle id="ffVmax_${i}" cx="${x}" cy="${yAxis}" r="3" fill="#22c9a0" stroke="#0a1020" stroke-width="1.2"/>`;
+    /* single-row labels, evenly spaced */
+    s += `<text x="${x}" y="${labelY}" fill="#8fa3c4" font-size="10.5"
+             text-anchor="middle" font-family="Consolas,monospace">x/D=${xd}</text>`;
+  });
+
+  s += `<line id="ffLeLine" x1="${xL}" y1="${yAxis-R-24}" x2="${xL}" y2="${yAxis+R+24}"
+           stroke="#ff6b9d" stroke-width="2" stroke-dasharray="6 5" filter="url(#ffGlow)"/>`;
+  s += `<text id="ffLeLbl" x="${xL}" y="${yAxis-R-32}" fill="#ff6b9d"
+           font-size="11.5" font-weight="700" text-anchor="middle">Le</text>`;
+
+  s += `<text id="ffEntLbl" x="${(xL+xR)/2}" y="26" fill="#ffb547" font-size="12.5"
+           font-weight="700" text-anchor="middle" letter-spacing="2">ENTRANCE REGION — boundary layer growing</text>`;
+  s += `<text id="ffFdLbl" x="${(xL+xR)/2}" y="26" fill="#22c9a0" font-size="12.5"
+           font-weight="700" text-anchor="middle" letter-spacing="2">FULLY DEVELOPED</text>`;
+
+  s += `<defs>
+    <marker id="ffArrow" viewBox="0 0 10 10" refX="9" refY="5"
+            markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#38d6ff"/>
+    </marker>
+  </defs>`;
+  s += `<line x1="${xL+10}" y1="${H-38}" x2="${xR-10}" y2="${H-38}"
+           stroke="#38d6ff" stroke-width="2" marker-end="url(#ffArrow)"/>`;
+  s += `<text x="${(xL+xR)/2}" y="${H-18}" fill="#38d6ff"
+           font-size="12" text-anchor="middle" letter-spacing="1.5">FLOW DIRECTION</text>`;
+
+  s += `</svg>`;
+  document.getElementById('flowField2D').innerHTML = s;
+
+  window._ffGeo = {W, H, xL, xR, yAxis, R, stationsXD, stationPx, N_ROWS};
+  flowFieldBuilt = true;
+}
+
+/* ------------------------------------------------------------------
+   Velocity profile development panel
+   ------------------------------------------------------------------ */
+let hydroBuilt = false;
+let lastHydroFlow = -999;
+
+function buildHydroProfiles(){
+  const W = 920, H = 360;
+  const xL = 70, xR = 880;
+  const yAxis = 175;
+  const R = 75;
+  const stationsXD = [0, 1, 2, 4, 8, 16, 32, 64, 128];
+
+  let s = `<svg id="hpSVG" viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block"
+               font-family="Consolas,monospace">`;
+  s += `<defs>
+    <linearGradient id="hpPipe" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"  stop-color="#0e1a2d"/>
+      <stop offset="50%" stop-color="#0b1524"/>
+      <stop offset="100%" stop-color="#0e1a2d"/>
+    </linearGradient>
+    <filter id="hpGlow"><feGaussianBlur stdDeviation="1.8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="#0a1220" rx="10"/>`;
+  s += `<rect x="${xL}" y="${yAxis-R}" width="${xR-xL}" height="${2*R}" fill="url(#hpPipe)"/>`;
+  s += `<line x1="${xL}" y1="${yAxis-R}" x2="${xR}" y2="${yAxis-R}"
+           stroke="#38d6ff" stroke-width="3" stroke-linecap="round" filter="url(#hpGlow)"/>`;
+  s += `<line x1="${xL}" y1="${yAxis+R}" x2="${xR}" y2="${yAxis+R}"
+           stroke="#38d6ff" stroke-width="3" stroke-linecap="round" filter="url(#hpGlow)"/>`;
+  s += `<line x1="${xL}" y1="${yAxis}" x2="${xR}" y2="${yAxis}"
+           stroke="rgba(120,220,255,.22)" stroke-width="1" stroke-dasharray="5 7"/>`;
+  s += `<text x="${xL+10}" y="${yAxis-R-12}" fill="#38d6ff" font-size="11.5"
+           font-weight="700">no-slip wall: u = 0</text>`;
+  s += `<text x="${xL+10}" y="${yAxis+R+22}" fill="#38d6ff" font-size="11.5"
+           font-weight="700">no-slip wall: u = 0</text>`;
+
+  /* ---- EVEN-SPACING station mapping ---- */
+  const stationPx = makeStationPx(xL, xR, stationsXD, 60);
+  const labelY = yAxis + R + 42;
+
+  stationsXD.forEach((xd, i)=>{
+    const x = stationPx(xd);
+    s += `<line x1="${x}" y1="${yAxis-R-4}" x2="${x}" y2="${yAxis+R+4}"
+             stroke="rgba(120,220,255,.18)" stroke-width="1"/>`;
+    s += `<text x="${x}" y="${labelY}" fill="#8fa3c4" font-size="10.5"
+             text-anchor="middle" font-family="Consolas,monospace">x/D=${xd}</text>`;
+    s += `<path id="hpProf_${i}" d="" fill="none" stroke="#ffb547"
+             stroke-width="2" filter="url(#hpGlow)"/>`;
+    s += `<circle id="hpVmax_${i}" cx="${x}" cy="${yAxis}" r="3.6"
+             fill="#22c9a0" stroke="#0a1020" stroke-width="1.4"/>`;
+  });
+
+  s += `<line id="hpLeLine" x1="${xL}" y1="${yAxis-R-30}" x2="${xL}" y2="${yAxis+R+30}"
+           stroke="#ff6b9d" stroke-width="2" stroke-dasharray="6 5" filter="url(#hpGlow)"/>`;
+  s += `<text id="hpLeLbl" x="${xL}" y="${yAxis-R-38}" fill="#ff6b9d"
+           font-size="11.5" font-weight="700" text-anchor="middle">Le</text>`;
+  s += `<text id="hpRegionEntrance" x="${(xL+xR)/2}" y="30"
+           fill="#ffb547" font-size="12.5" font-weight="700"
+           text-anchor="middle" letter-spacing="2">ENTRANCE REGION</text>`;
+  s += `<text id="hpRegionFD" x="${(xL+xR)/2}" y="30"
+           fill="#22c9a0" font-size="12.5" font-weight="700"
+           text-anchor="middle" letter-spacing="2">FULLY DEVELOPED</text>`;
+  s += `</svg>`;
+  document.getElementById('hydroProfiles').innerHTML = s;
+  window._hpGeo = {W,H,xL,xR,yAxis,R,stationsXD,stationPx};
+}
+
+function buildHydroCrossSections(){
+  const W=460, H=340, mL=60, mR=20, mT=20, mB=50;
+  const pw = W-mL-mR, ph = H-mT-mB;
+  let s = `<svg id="hxSVG" viewBox="0 0 ${W} ${H}"
+               style="width:100%;height:auto;display:block" font-family="Consolas,monospace">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="#0a1220" rx="10"/>`;
+  s += `<line x1="${mL}" y1="${mT+ph}" x2="${mL+pw}" y2="${mT+ph}" stroke="#3d5680" stroke-width="1.6"/>`;
+  s += `<line x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT+ph}" stroke="#3d5680" stroke-width="1.6"/>`;
+  for(let i=0;i<=4;i++){
+    const gx = mL + pw*i/4;
+    s += `<line x1="${gx}" y1="${mT}" x2="${gx}" y2="${mT+ph}" stroke="#1b2a45" stroke-width="1"/>`;
+    s += `<text x="${gx}" y="${mT+ph+18}" fill="#8fa3c4" font-size="10" text-anchor="middle">${(-1+2*i/4).toFixed(1)}</text>`;
+  }
+  for(let i=0;i<=4;i++){
+    const gy = mT + ph*i/4;
+    const v = 2.5*(1 - i/4);
+    s += `<line x1="${mL}" y1="${gy}" x2="${mL+pw}" y2="${gy}" stroke="#1b2a45" stroke-width="1"/>`;
+    s += `<text x="${mL-8}" y="${gy+3.5}" fill="#8fa3c4" font-size="10" text-anchor="end">${v.toFixed(1)}</text>`;
+  }
+  s += `<text x="${mL+pw/2}" y="${H-10}" fill="#38d6ff" font-size="11.5" text-anchor="middle" font-weight="600">r / R</text>`;
+  s += `<text x="14" y="${mT+ph/2}" fill="#38d6ff" font-size="11.5" text-anchor="middle" font-weight="600" transform="rotate(-90,14,${mT+ph/2})">u / Vavg</text>`;
+  const y1 = mT + ph - (1/2.5)*ph;
+  s += `<line x1="${mL}" y1="${y1}" x2="${mL+pw}" y2="${y1}" stroke="rgba(120,220,255,.28)" stroke-width="1" stroke-dasharray="4 6"/>`;
+  s += `<text x="${mL+pw-4}" y="${y1-4}" fill="#8fa3c4" font-size="10" text-anchor="end">u = Vavg</text>`;
+  s += `<line x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT+ph}" stroke="#38d6ff" stroke-width="2.4"/>`;
+  s += `<line x1="${mL+pw}" y1="${mT}" x2="${mL+pw}" y2="${mT+ph}" stroke="#38d6ff" stroke-width="2.4"/>`;
+  s += `<text x="${mL+6}" y="${mT+14}" fill="#38d6ff" font-size="10">wall</text>`;
+  s += `<text x="${mL+pw-6}" y="${mT+14}" fill="#38d6ff" font-size="10" text-anchor="end">wall</text>`;
+  const cols = ['#ffb547','#22c9a0','#38d6ff','#ff6b9d','#a78bfa'];
+  cols.forEach((c,i)=>{
+    s += `<path id="hxCurve_${i}" d="" fill="none" stroke="${c}" stroke-width="2" opacity=".9"/>`;
+  });
+  s += `<g transform="translate(${mL+14},${mT+14})">`;
+  cols.forEach((c,i)=>{
+    const yy = i*16;
+    s += `<rect x="0" y="${yy-6}" width="12" height="3" fill="${c}"/>`;
+    s += `<text id="hxLbl_${i}" x="18" y="${yy-2}" fill="#c5d8f5" font-size="10.5" font-family="Consolas,monospace">x/D = 0</text>`;
+  });
+  s += `</g>`;
+  s += `</svg>`;
+  document.getElementById('hydroCrossSections').innerHTML = s;
+}
+
+function buildHydroPressure(){
+  const W=460, H=340, mL=60, mR=20, mT=20, mB=50;
+  const pw = W-mL-mR, ph = H-mT-mB;
+  let s = `<svg id="hprSVG" viewBox="0 0 ${W} ${H}"
+               style="width:100%;height:auto;display:block" font-family="Consolas,monospace">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="#0a1220" rx="10"/>`;
+  s += `<line x1="${mL}" y1="${mT+ph}" x2="${mL+pw}" y2="${mT+ph}" stroke="#3d5680" stroke-width="1.6"/>`;
+  s += `<line x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT+ph}" stroke="#3d5680" stroke-width="1.6"/>`;
+  for(let i=0;i<=4;i++){
+    const gx = mL + pw*i/4;
+    s += `<line x1="${gx}" y1="${mT}" x2="${gx}" y2="${mT+ph}" stroke="#1b2a45" stroke-width="1"/>`;
+    s += `<text x="${gx}" y="${mT+ph+18}" fill="#8fa3c4" font-size="10" text-anchor="middle">${i*40}</text>`;
+  }
+  for(let i=0;i<=4;i++){
+    const gy = mT + ph*i/4;
+    const v = 1.0 - 0.25*i;
+    s += `<line x1="${mL}" y1="${gy}" x2="${mL+pw}" y2="${gy}" stroke="#1b2a45" stroke-width="1"/>`;
+    s += `<text x="${mL-8}" y="${gy+3.5}" fill="#8fa3c4" font-size="10" text-anchor="end">${v.toFixed(2)}</text>`;
+  }
+  s += `<text x="${mL+pw/2}" y="${H-10}" fill="#38d6ff" font-size="11.5" text-anchor="middle" font-weight="600">x / D</text>`;
+  s += `<text x="14" y="${mT+ph/2}" fill="#38d6ff" font-size="11.5" text-anchor="middle" font-weight="600" transform="rotate(-90,14,${mT+ph/2})">P / P₀</text>`;
+  s += `<text x="${mL+pw/2}" y="${mT+14}" fill="#c5d8f5" font-size="10.5" text-anchor="middle">pressure falls along the pipe →</text>`;
+  s += `<rect id="hprEntrance" x="${mL}" y="${mT}" width="0" height="${ph}" fill="rgba(255,181,71,.08)"/>`;
+  s += `<line id="hprLeLine" x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT+ph}"
+           stroke="#ff6b9d" stroke-width="1.6" stroke-dasharray="4 4"/>`;
+  s += `<path id="hprFill" d="" fill="rgba(56,214,255,.12)"/>`;
+  s += `<path id="hprCurve" d="" fill="none" stroke="#38d6ff" stroke-width="2.4" filter="url(#hpGlow)"/>`;
+  s += `</svg>`;
+  document.getElementById('hydroPressure').innerHTML = s;
+}
+
+/* ------------------------------------------------------------------
+   LIVE UPDATE
+   ------------------------------------------------------------------ */
+function updateHydro(force){
+  if(!hydroBuilt) return;
+  const hs = hydroState();
+
+  const k   = flowK();
+  const dur = state.flow > 0.3 ? Math.max(0.25, 2.6 - 2.35*k) : 999;
+  document.querySelectorAll('#tab-hydro .sl, #tab-hydro .jet').forEach(el=>{
+    el.style.animationDuration = dur+'s';
+    el.style.animationPlayState = state.flow>0.3 ? 'running' : 'paused';
+  });
+
+  if(!force && Math.abs(state.flow - lastHydroFlow) < 0.02) return;
+  lastHydroFlow = state.flow;
+
+  setTxt('hyRe', hs.Re.toFixed(0));
+  setTxt('hyRegime', hs.regime);
+  setTxt('hyVavg', hs.Vavg.toFixed(4)+'<span class="u">m/s</span>');
+  setTxt('hyVmax', hs.Vmax.toFixed(4)+'<span class="u">m/s</span>');
+  setTxt('hyRatio', hs.VmaxRatio.toFixed(3));
+  setTxt('hyLe', (hs.Le*1000).toFixed(1)+'<span class="u">mm</span>');
+  setTxt('hyLeD', hs.Le_D.toFixed(1));
+  setTxt('hyF', hs.f.toExponential(3).replace('e-','×10⁻'));
+  setTxt('hyDPdx', hs.dPdx.toFixed(2)+'<span class="u">Pa/m</span>');
+
+  /* ========== 2D FLOW FIELD ========== */
+  const ff = window._ffGeo;
+  if(ff){
+    const {xL, xR, yAxis, R, stationsXD, stationPx, N_ROWS} = ff;
+    const isLaminar = hs.Re < 2300;
+    const n = hs.profN;
+    const flowKv = k;
+
+    for(let kk=0; kk<N_ROWS; kk++){
+      const rr = -1 + (2*kk+1)/N_ROWS;
+      const uRel = isLaminar
+        ? 2*(1 - rr*rr)
+        : (1 + 1/n)*Math.pow(Math.max(0, 1 - Math.abs(rr)), 1/n);
+      const intensity = Math.min(1, (uRel/hs.VmaxRatio)*flowKv);
+      const band = document.getElementById('ffBand_'+kk);
+      if(band){
+        const r = Math.round(56*intensity);
+        const g = Math.round(120*intensity + 30);
+        const b = Math.round(180*intensity + 40);
+        const a = (0.20 + 0.55*intensity).toFixed(2);
+        band.setAttribute('fill', `rgba(${r},${g},${b},${a})`);
+      }
+    }
+
+    const core = document.getElementById('ffCore');
+    if(core){
+      core.setAttribute('ry', (R*0.16 + R*0.22*flowKv).toFixed(1));
+      core.setAttribute('opacity', (0.3 + 0.55*flowKv).toFixed(2));
+    }
+
+    /* streamlines: sample by x/D and use stationPx */
+    const nStream = 7;
+    for(let si=0; si<nStream; si++){
+      const rr = -1 + 2*(si/(nStream-1));
+      let d = '';
+      for(let xD = 0; xD <= 220; xD += 3){
+        const xpos = stationPx(xD);
+        if(xpos > xR + 40) break;
+        const z = hs.Le_D > 0 ? xD/hs.Le_D : 1;
+        const uRel = profileShape(Math.abs(rr), Math.min(1,z), isLaminar, n);
+        const displace = (uRel - 1) * 0.18 * Math.sign(rr);
+        const rHere = Math.max(-1, Math.min(1, rr + displace*0.3));
+        const yy = yAxis + rHere*R;
+        d += (d === '' ? 'M' : 'L') + ' ' + xpos.toFixed(1) + ' ' + yy.toFixed(1) + ' ';
+      }
+      const strEl = document.getElementById('ffStream_'+si);
+      if(strEl){
+        strEl.setAttribute('d', d);
+        strEl.setAttribute('opacity', (0.25 + 0.55*flowKv).toFixed(2));
+      }
+    }
+
+    /* boundary layer edge δ(x) — sample by x/D */
+    let bU = '', bL = '';
+    for(let xD = 0; xD <= 220; xD += 3){
+      const xpos = stationPx(xD);
+      if(xpos > xR + 40) break;
+      let delta;
+      if(xD <= 0) delta = 0;
+      else if(xD >= hs.Le_D) delta = R;
+      else delta = R * smooth(Math.min(1, xD/Math.max(0.1, hs.Le_D)));
+      const yU = yAxis - R + delta;
+      const yL = yAxis + R - delta;
+      bU += (bU === '' ? 'M' : 'L') + ' ' + xpos.toFixed(1) + ' ' + yU.toFixed(1) + ' ';
+      bL += (bL === '' ? 'M' : 'L') + ' ' + xpos.toFixed(1) + ' ' + yL.toFixed(1) + ' ';
+    }
+    const blU = document.getElementById('ffBLu');
+    const blL = document.getElementById('ffBLl');
+    if(blU) blU.setAttribute('d', bU);
+    if(blL) blL.setAttribute('d', bL);
+
+    /* Le line — uses the same stationPx mapping */
+    const Le_px = stationPx(hs.Le_D);
+    const ffLe = document.getElementById('ffLeLine');
+    const ffLeLbl = document.getElementById('ffLeLbl');
+    if(ffLe){
+      ffLe.setAttribute('x1', Le_px);
+      ffLe.setAttribute('x2', Le_px);
+      ffLe.setAttribute('opacity', Le_px < xR ? 1 : 0.35);
+    }
+    if(ffLeLbl){
+      ffLeLbl.setAttribute('x', Le_px);
+      ffLeLbl.setAttribute('opacity', Le_px < xR ? 1 : 0.35);
+    }
+
+    const entLbl = document.getElementById('ffEntLbl');
+    const fdLbl  = document.getElementById('ffFdLbl');
+    if(entLbl){ entLbl.setAttribute('x', (xL+Math.min(Le_px, xR))/2); entLbl.setAttribute('opacity', Le_px>xL+60?1:0); }
+    if(fdLbl){ fdLbl.setAttribute('x', (Math.min(Le_px, xR)+xR)/2); fdLbl.setAttribute('opacity', Le_px<xR-60?1:0); }
+
+    /* profile curves */
+    const scaleX = 40;
+    stationsXD.forEach((xd, i)=>{
+      const x = stationPx(xd);
+      const z = hs.Le_D > 0 ? xd/hs.Le_D : 1;
+      const isFD = z >= 1;
+      let d = '';
+      const N = 48;
+      for(let kk=0; kk<=N; kk++){
+        const rr = -1 + 2*kk/N;
+        const u = profileShape(rr, z, isLaminar, n);
+        const px = x + u*scaleX*(0.5*flowKv + 0.5);
+        const py = yAxis + rr*R;
+        d += (kk===0 ? 'M' : 'L') + ' ' + px.toFixed(1) + ' ' + py.toFixed(1) + ' ';
+      }
+      const path = document.getElementById('ffProf_'+i);
+      if(path){
+        path.setAttribute('d', d);
+        path.setAttribute('stroke', isFD ? '#22c9a0' : (z < 0.3 ? '#ffb547' : '#7fd6b8'));
+        path.setAttribute('opacity', (0.5 + 0.5*flowKv).toFixed(2));
+      }
+      const vmaxMark = document.getElementById('ffVmax_'+i);
+      if(vmaxMark){
+        const uMax = profileShape(0, z, isLaminar, n);
+        vmaxMark.setAttribute('cx', (x + uMax*scaleX*(0.5*flowKv+0.5)).toFixed(1));
+        vmaxMark.setAttribute('cy', yAxis);
+        vmaxMark.setAttribute('opacity', state.flow > 0.2 ? 1 : 0);
+      }
+    });
+  }
+
+  /* ========== PROFILE DEVELOPMENT PANEL ========== */
+  const geo = window._hpGeo;
+  if(geo){
+    const {xL,xR,yAxis,R,stationsXD,stationPx} = geo;
+    const isLaminar = hs.Re < 2300;
+    const n = hs.profN;
+    const scaleX = 40;
+    const flowKv = k;
+
+    const Le_px = stationPx(hs.Le_D);
+    const leLine = document.getElementById('hpLeLine');
+    const leLbl  = document.getElementById('hpLeLbl');
+    if(leLine){
+      leLine.setAttribute('x1', Le_px);
+      leLine.setAttribute('x2', Le_px);
+      leLine.setAttribute('opacity', Le_px < xR ? 1 : 0.35);
+    }
+    if(leLbl){
+      leLbl.setAttribute('x', Le_px);
+      leLbl.setAttribute('opacity', Le_px < xR ? 1 : 0.35);
+    }
+
+    const entLbl = document.getElementById('hpRegionEntrance');
+    const fdLbl  = document.getElementById('hpRegionFD');
+    if(entLbl){ entLbl.setAttribute('x', (xL+Math.min(Le_px,xR))/2); entLbl.setAttribute('opacity', Le_px>xL+40?1:0); }
+    if(fdLbl){ fdLbl.setAttribute('x', (Math.min(Le_px,xR)+xR)/2); fdLbl.setAttribute('opacity', Le_px<xR-40?1:0); }
+
+    stationsXD.forEach((xd, i)=>{
+      const x = stationPx(xd);
+      const z = hs.Le_D > 0 ? xd/hs.Le_D : 1;
+      const isFD = z >= 1;
+      let d = '';
+      const N = 48;
+      for(let kk=0; kk<=N; kk++){
+        const rr = -1 + 2*kk/N;
+        const u = profileShape(rr, z, isLaminar, n);
+        const px = x + u*scaleX*(0.5*flowKv + 0.5);
+        const py = yAxis + rr*R;
+        d += (kk===0 ? 'M' : 'L') + ' ' + px.toFixed(1) + ' ' + py.toFixed(1) + ' ';
+      }
+      const path = document.getElementById('hpProf_'+i);
+      if(path){
+        path.setAttribute('d', d);
+        path.setAttribute('stroke', isFD ? '#22c9a0' : (z < 0.3 ? '#ffb547' : '#7fd6b8'));
+      }
+      const vmaxMark = document.getElementById('hpVmax_'+i);
+      if(vmaxMark){
+        const uMax = profileShape(0, z, isLaminar, n);
+        vmaxMark.setAttribute('cx', (x + uMax*scaleX*(0.5*flowKv+0.5)).toFixed(1));
+        vmaxMark.setAttribute('cy', yAxis);
+        vmaxMark.setAttribute('opacity', state.flow > 0.2 ? 1 : 0);
+      }
+    });
+  }
+
+  /* ========== CROSS-SECTIONS ========== */
+  const xStations = [0, 2, 6, 20, 80];
+  const xCols = ['#ffb547','#22c9a0','#38d6ff','#ff6b9d','#a78bfa'];
+  const W2=460, H2=340, mL2=60, mR2=20, mT2=20, mB2=50;
+  const pw2 = W2-mL2-mR2, ph2 = H2-mT2-mB2;
+  const yMaxPlot = 2.5;
+  xStations.forEach((xd, i)=>{
+    const z = hs.Le_D > 0 ? xd/hs.Le_D : 1;
+    let d = '';
+    const N = 60;
+    for(let kk=0; kk<=N; kk++){
+      const rr = -1 + 2*kk/N;
+      const u = profileShape(rr, z, hs.Re<2300, hs.profN);
+      const px = mL2 + (rr+1)/2 * pw2;
+      const py = mT2 + ph2 - (u/yMaxPlot)*ph2;
+      d += (kk===0?'M':'L') + ' ' + px.toFixed(1) + ' ' + py.toFixed(1) + ' ';
+    }
+    const path = document.getElementById('hxCurve_'+i);
+    if(path) path.setAttribute('d', d);
+    const lbl = document.getElementById('hxLbl_'+i);
+    if(lbl){
+      const tag = z >= 1 ? ' (fully dev.)' : (z < 0.05 ? ' (inlet)' : '');
+      lbl.textContent = `x/D = ${xd}${tag}`;
+      lbl.setAttribute('fill', xCols[i]);
+    }
+  });
+
+  /* ========== PRESSURE (entrance region) ========== */
+  const xMaxPlot = 160;
+  const pmL=60, pmR=20, pmT=20, pmB=50;
+  const ppw = W2-pmL-pmR, pph = H2-pmT-pmB;
+  const Le_D = Math.max(0.1, hs.Le_D);
+  const kFD = 0.35, kEntr = 0.75;
+  let dCurve = '';
+  const Np = 100;
+  for(let kk=0; kk<=Np; kk++){
+    const xD = (kk/Np)*xMaxPlot;
+    let P;
+    if(xD <= Le_D){
+      P = 1 - (kEntr*xD)/100;
+    } else {
+      const PLe = 1 - (kEntr*Le_D)/100;
+      P = PLe - (kFD*(xD-Le_D))/100;
+    }
+    P = Math.max(0, P);
+    const px = pmL + (xD/xMaxPlot)*ppw;
+    const py = pmT + pph - P*pph;
+    dCurve += (kk===0?'M':'L') + ' ' + px.toFixed(1) + ' ' + py.toFixed(1) + ' ';
+  }
+  const pCurve = document.getElementById('hprCurve');
+  if(pCurve) pCurve.setAttribute('d', dCurve);
+  const pFill = document.getElementById('hprFill');
+  if(pFill) pFill.setAttribute('d', dCurve + ` L ${pmL+ppw} ${pmT+pph} L ${pmL} ${pmT+pph} Z`);
+  const leX = pmL + Math.min(Le_D/xMaxPlot, 1)*ppw;
+  const leLineP = document.getElementById('hprLeLine');
+  if(leLineP){ leLineP.setAttribute('x1', leX); leLineP.setAttribute('x2', leX); leLineP.setAttribute('opacity', Le_D<xMaxPlot?1:0); }
+  const entRect = document.getElementById('hprEntrance');
+  if(entRect) entRect.setAttribute('width', Math.min(leX-pmL, ppw).toFixed(1));
+
+  updateVenturiChart(hs);
+  updateOrificeChart(hs);
+}
+
+function setTxt(id, html){ const el=document.getElementById(id); if(el) el.innerHTML=html; }
+
+/* ==================================================================
+   VENTURI FLOW FIELD
+   ================================================================== */
+function buildVenturiFlow(){
+  const W=800, H=430, cy=130, R=58;
+  const rT = R*16/26;
+  const x0=55, x1=195, x2=315, x3=435, x4=555, x5=715;
+  const h = x => {
+    if(x<=x1) return R;
+    if(x<=x2) return R+(rT-R)*smooth((x-x1)/(x2-x1));
+    if(x<=x3) return rT;
+    if(x<=x4) return rT+(R-rT)*smooth((x-x3)/(x4-x3));
+    return R;
+  };
+  let dFill='';
+  for(let x=x0;x<=x5;x+=3) dFill += (x===x0?'M':'L')+' '+x+' '+(cy-h(x)).toFixed(1)+' ';
+  for(let x=x5;x>=x0;x-=3) dFill += 'L '+x+' '+(cy+h(x)).toFixed(1)+' ';
+  dFill += 'Z';
+  let sl='';
+  [0.20,0.42,0.62,0.80,0.92].forEach(rr=>{
+    let up='', lo='';
+    for(let x=x0;x<=x5;x+=4){
+      const f = 1-(1-h(x)/R)*Math.pow(rr,1.5);
+      const r = R*rr*f;
+      up += (x===x0?'M':'L')+' '+x+' '+(cy-r).toFixed(1)+' ';
+      lo += (x===x0?'M':'L')+' '+x+' '+(cy+r).toFixed(1)+' ';
+    }
+    sl += `<path class="sl" d="${up}"/>`;
+    sl += `<path class="sl" d="${lo}"/>`;
+  });
+  let wt='', wb='';
+  for(let x=x0;x<=x5;x+=3){
+    wt += (x===x0?'M':'L')+' '+x+' '+(cy-h(x)).toFixed(1)+' ';
+    wb += (x===x0?'M':'L')+' '+x+' '+(cy+h(x)).toFixed(1)+' ';
+  }
+  const cTop=275, cBot=400;
+  const yP = p => cBot - p*(cBot-cTop)/1.15;
+  const yV = v => cBot - v*(cBot-cTop)/3.0;
+
+  let guides = '';
+  [x1, x2, x3, x4].forEach(x=>{
+    guides += `<line x1="${x}" y1="${cy-R-30}" x2="${x}" y2="${cBot+8}"
+                stroke="#1b2a45" stroke-width="1" stroke-dasharray="3 5"/>`;
+  });
+  const regionLabels = [
+    { x: (x0+x1)/2, lab: 'Inlet'  },
+    { x: (x1+x2)/2, lab: 'Conv.'  },
+    { x: (x2+x3)/2, lab: 'Throat' },
+    { x: (x3+x4)/2, lab: 'Div.'   },
+    { x: (x4+x5)/2, lab: 'Outlet' }
+  ];
+  regionLabels.forEach(({x,lab})=>{
+    guides += `<text x="${x}" y="${cy-R-36}" fill="#8fa3c4" font-size="10"
+                text-anchor="middle" font-family="Consolas,monospace">${lab}</text>`;
+  });
+
+  const svg = `
+<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
+  <defs>
+    <linearGradient id="vVel" x1="0" y1="0" x2="1" y2="0">
+      <stop id="vVelS0" offset="0%"   stop-color="#0f2338"/>
+      <stop id="vVelS1" offset="30%"  stop-color="#122a42"/>
+      <stop id="vVelS2" offset="42%"  stop-color="#14476e"/>
+      <stop id="vVelS3" offset="49%"  stop-color="#1a6fb5"/>
+      <stop id="vVelS4" offset="57%"  stop-color="#14476e"/>
+      <stop id="vVelS5" offset="70%"  stop-color="#122a42"/>
+      <stop id="vVelS6" offset="100%" stop-color="#0f2338"/>
+    </linearGradient>
+    <linearGradient id="vPressFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(56,214,255,.35)"/>
+      <stop offset="100%" stop-color="rgba(56,214,255,0)"/>
+    </linearGradient>
+  </defs>
+  <path id="vFill" d="${dFill}" fill="url(#vVel)" opacity=".22"/>
+  <g id="vStreams">${sl}</g>
+  <path class="wallline" d="${wt}"/>
+  <path class="wallline" d="${wb}"/>
+  <line x1="${x0}" y1="${cy}" x2="${x5}" y2="${cy}"
+        stroke="rgba(120,220,255,.18)" stroke-width="1" stroke-dasharray="4 6"/>
+  ${guides}
+  <rect x="${x0}" y="${cTop}" width="${x5-x0}" height="${cBot-cTop}"
+        fill="#0a1220" stroke="#1b2a45" rx="6"/>
+  <path id="vPfill" d="" fill="url(#vPressFill)"/>
+  <path id="vPcurve" d="" fill="none" stroke="#38d6ff" stroke-width="2.2"/>
+  <path id="vVcurve" d="" fill="none" stroke="#ffb547" stroke-width="1.8" stroke-dasharray="6 5"/>
+  <text x="${x0+8}" y="${cTop+16}" fill="#38d6ff" font-size="10.5" font-family="Consolas,monospace">P / P₀</text>
+  <text x="${x5-8}" y="${cTop+16}" fill="#ffb547" font-size="10.5" text-anchor="end" font-family="Consolas,monospace">V / V₀</text>
+  <text id="vFlowLbl" x="${x0+8}" y="${cTop+33}" fill="#8fa3c4" font-size="10.5" font-family="Consolas,monospace">Q = 0.00 L/min</text>
+  <text x="${(x0+x5)/2}" y="${cBot+22}" fill="#8fa3c4" font-size="10" text-anchor="middle">Axial position →</text>
+</svg>`;
+  document.getElementById('venturiFlow').innerHTML = svg;
+  window._vShape = {
+    x0, x5, cTop, cBot, yP, yV,
+    dPs: x => Math.pow(R/h(x), 4)*0.13 + 0.08*(x-x0)/(x5-x0),
+    vRel: x => Math.pow(R/h(x), 2)
+  };
+}
+
+const VENT_STOPS = [
+  ['#0f2338','#0f2338'],
+  ['#122a42','#1a4a75'],
+  ['#14476e','#1d7fd6'],
+  ['#1a6fb5','#8fefff'],
+  ['#14476e','#1d7fd6'],
+  ['#122a42','#1a4a75'],
+  ['#0f2338','#0f2338']
+];
+
+function updateVenturiChart(hs){
+  const vs = window._vShape;
+  if(!vs) return;
+  const k  = flowK();
+  const k2 = k*k;
+
+  VENT_STOPS.forEach((p,i)=>{
+    const el = document.getElementById('vVelS'+i);
+    if(el) el.setAttribute('stop-color', lerpColor(p[0], p[1], k));
+  });
+  const fill = document.getElementById('vFill');
+  if(fill) fill.setAttribute('opacity', (0.20 + 0.80*k).toFixed(2));
+
+  document.querySelectorAll('#venturiFlow .sl').forEach(el=>{
+    el.style.opacity = (0.15 + 0.80*k).toFixed(2);
+  });
+
+  const lbl = document.getElementById('vFlowLbl');
+  if(lbl){
+    const Vth = hs.Vavg * Math.pow(D_PIPE/D_THROAT, 2);
+    lbl.textContent = `Q = ${state.flow.toFixed(2)} L/min   ·   V_throat = ${Vth.toFixed(3)} m/s`;
+    lbl.setAttribute('fill', k > 0.02 ? '#8fefff' : '#8fa3c4');
+  }
+
+  let dP='', dV='';
+  for(let x=vs.x0; x<=vs.x5; x+=3){
+    const P = 1 - k2*vs.dPs(x);
+    const V = k*vs.vRel(x);
+    dP += (x===vs.x0?'M':'L')+' '+x+' '+vs.yP(P).toFixed(1)+' ';
+    dV += (x===vs.x0?'M':'L')+' '+x+' '+vs.yV(V).toFixed(1)+' ';
+  }
+  const pC = document.getElementById('vPcurve');
+  const vC = document.getElementById('vVcurve');
+  const pF = document.getElementById('vPfill');
+  if(pC) pC.setAttribute('d', dP);
+  if(vC) vC.setAttribute('d', dV);
+  if(pF) pF.setAttribute('d', dP + ` L ${vs.x5} ${vs.cBot} L ${vs.x0} ${vs.cBot} Z`);
+}
+
+/* ==================================================================
+   ORIFICE FLOW FIELD
+   ================================================================== */
+function buildOrificeFlow(){
+  const W=800, H=430, cy=130, R=58;
+  const rO = R*16/26;
+  const rV = rO*CC_ORIFICE;
+  const x0=55, xC=200, xPlate=390, xV=430, xR=630, x5=715;
+  const G = x => {
+    if(x<=xC) return R;
+    if(x<=xPlate) return R+(rO-R)*smooth((x-xC)/(xPlate-xC));
+    if(x<=xV)     return rO+(rV-rO)*smooth((x-xPlate)/(xV-xPlate));
+    if(x<=xR)     return rV+(R-rV)*smooth((x-xV)/(xR-xV));
+    return R;
+  };
+  let dFill='';
+  for(let x=x0;x<=x5;x+=3) dFill += (x===x0?'M':'L')+' '+x+' '+(cy-R).toFixed(1)+' ';
+  for(let x=x5;x>=x0;x-=3) dFill += 'L '+x+' '+(cy+R).toFixed(1)+' ';
+  dFill += 'Z';
+  let sl='';
+  [0.18,0.36,0.55,0.74,0.90].forEach(f=>{
+    let up='', lo='';
+    for(let x=x0;x<=x5;x+=4){
+      const r = f*G(x);
+      up += (x===x0?'M':'L')+' '+x+' '+(cy-r).toFixed(1)+' ';
+      lo += (x===x0?'M':'L')+' '+x+' '+(cy+r).toFixed(1)+' ';
+    }
+    sl += `<path class="sl" d="${up}"/>`;
+    sl += `<path class="sl" d="${lo}"/>`;
+  });
+  let jetU='', jetL='';
+  for(let x=xC;x<=xR;x+=4){
+    jetU += (x===xC?'M':'L')+' '+x+' '+(cy-G(x)).toFixed(1)+' ';
+    jetL += (x===xC?'M':'L')+' '+x+' '+(cy+G(x)).toFixed(1)+' ';
+  }
+  let recU='', recL='';
+  recU = `M ${xPlate} ${cy-R} `;
+  for(let x=xPlate;x<=xR;x+=4) recU += `L ${x} ${(cy-R).toFixed(1)} `;
+  for(let x=xR;x>=xPlate;x-=4) recU += `L ${x} ${(cy-G(x)).toFixed(1)} `;
+  recU += 'Z';
+  recL = `M ${xPlate} ${cy+R} `;
+  for(let x=xPlate;x<=xR;x+=4) recL += `L ${x} ${(cy+R).toFixed(1)} `;
+  for(let x=xR;x>=xPlate;x-=4) recL += `L ${x} ${(cy+G(x)).toFixed(1)} `;
+  recL += 'Z';
+  let wt='', wb='';
+  for(let x=x0;x<=x5;x+=3){
+    wt += (x===x0?'M':'L')+' '+x+' '+(cy-R).toFixed(1)+' ';
+    wb += (x===x0?'M':'L')+' '+x+' '+(cy+R).toFixed(1)+' ';
+  }
+  const cTop=275, cBot=400;
+  const yP = p => cBot - p*(cBot-cTop)/1.15;
+  const yV = v => cBot - v*(cBot-cTop)/7.0;
+
+  let guides = '';
+  [xC, xPlate, xV, xR].forEach(x=>{
+    guides += `<line x1="${x}" y1="${cy-R-30}" x2="${x}" y2="${cBot+8}"
+                stroke="#1b2a45" stroke-width="1" stroke-dasharray="3 5"/>`;
+  });
+  const orificeLabels = [
+    { x: (x0+xC)/2,   lab: 'Approach', row: 0 },
+    { x: xPlate,      lab: 'Orifice',  row: 1 },
+    { x: xV,          lab: 'Vena c.',  row: 0 },
+    { x: xR,          lab: 'Reattach', row: 1 },
+    { x: (xR+x5)/2,   lab: 'Outlet',   row: 0 }
+  ];
+  orificeLabels.forEach(({x,lab,row})=>{
+    const y = cy - R - 36 - row * 14;
+    guides += `<text x="${x}" y="${y}" fill="#8fa3c4" font-size="10"
+                text-anchor="middle" font-family="Consolas,monospace">${lab}</text>`;
+  });
+
+  const vcY = cy-G(xV);
+  let vcMark = `<line x1="${xV}" y1="${vcY-14}" x2="${xV}" y2="${cy+G(xV)+14}"
+                  stroke="#ff6b9d" stroke-width="1.6" stroke-dasharray="4 4"/>
+                <text x="${xV+6}" y="${vcY-20}" fill="#ff6b9d" font-size="10.5"
+                  font-family="Consolas,monospace">vena contracta</text>`;
+  const svg = `
+<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block">
+  <defs>
+    <pattern id="oHatch" width="9" height="9" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="0" x2="0" y2="9" stroke="rgba(255,107,157,.38)" stroke-width="1.6"/>
+    </pattern>
+    <linearGradient id="oVel" x1="0" y1="0" x2="1" y2="0">
+      <stop id="oVelS0" offset="0%"    stop-color="#0f2338"/>
+      <stop id="oVelS1" offset="36%"   stop-color="#0f2338"/>
+      <stop id="oVelS2" offset="50%"   stop-color="#14385c"/>
+      <stop id="oVelS3" offset="56.8%" stop-color="#1a6fb5"/>
+      <stop id="oVelS4" offset="62%"   stop-color="#14385c"/>
+      <stop id="oVelS5" offset="87%"   stop-color="#0f2338"/>
+      <stop id="oVelS6" offset="100%"  stop-color="#0f2338"/>
+    </linearGradient>
+    <linearGradient id="oPressFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(56,214,255,.35)"/>
+      <stop offset="100%" stop-color="rgba(56,214,255,0)"/>
+    </linearGradient>
+  </defs>
+  <path id="oFill" d="${dFill}" fill="url(#oVel)" opacity=".55"/>
+  <path d="${recU}" fill="url(#oHatch)" opacity=".9"/>
+  <path d="${recL}" fill="url(#oHatch)" opacity=".9"/>
+  <g id="oStreams">${sl}</g>
+  <path class="jet" d="${jetU}"/>
+  <path class="jet" d="${jetL}"/>
+  <path class="wallline" d="${wt}"/>
+  <path class="wallline" d="${wb}"/>
+  <rect x="${xPlate-5}" y="${cy-R}" width="10" height="${R-rO}" fill="#ffb547" opacity=".95"/>
+  <rect x="${xPlate-5}" y="${cy+rO}" width="10" height="${R-rO}" fill="#ffb547" opacity=".95"/>
+  <line x1="${x0}" y1="${cy}" x2="${x5}" y2="${cy}"
+        stroke="rgba(120,220,255,.18)" stroke-width="1" stroke-dasharray="4 6"/>
+  ${guides}
+  ${vcMark}
+  <text x="${(xPlate+xR)/2}" y="${cy-R-14}" fill="#ff6b9d" font-size="10"
+        text-anchor="middle" font-family="Consolas,monospace">recirculation / dead zone</text>
+  <g opacity=".8">
+    <path d="M ${xPlate+40} ${cy-R+16} a 11 11 0 1 1 0 22" fill="none" stroke="#ff6b9d" stroke-width="1.6"/>
+    <polygon points="${xPlate+40},${cy-R+16} ${xPlate+34},${cy-R+22} ${xPlate+46},${cy-R+22}" fill="#ff6b9d"/>
+  </g>
+  <g opacity=".8">
+    <path d="M ${xPlate+40} ${cy+R-16} a 11 11 0 1 0 0 -22" fill="none" stroke="#ff6b9d" stroke-width="1.6"/>
+    <polygon points="${xPlate+40},${cy+R-16} ${xPlate+34},${cy+R-22} ${xPlate+46},${cy+R-22}" fill="#ff6b9d"/>
+  </g>
+  <rect x="${x0}" y="${cTop}" width="${x5-x0}" height="${cBot-cTop}"
+        fill="#0a1220" stroke="#1b2a45" rx="6"/>
+  <path id="oPfill" d="" fill="url(#oPressFill)"/>
+  <path id="oPcurve" d="" fill="none" stroke="#38d6ff" stroke-width="2.2"/>
+  <path id="oVcurve" d="" fill="none" stroke="#ffb547" stroke-width="1.8" stroke-dasharray="6 5"/>
+  <text x="${x0+8}" y="${cTop+16}" fill="#38d6ff" font-size="10.5" font-family="Consolas,monospace">P / P₀</text>
+  <text x="${x5-8}" y="${cTop+16}" fill="#ffb547" font-size="10.5" text-anchor="end" font-family="Consolas,monospace">V / V₀</text>
+  <text id="oFlowLbl" x="${x0+8}" y="${cTop+33}" fill="#8fa3c4" font-size="10.5" font-family="Consolas,monospace">Q = 0.00 L/min</text>
+  <text x="${(x0+x5)/2}" y="${cBot+22}" fill="#8fa3c4" font-size="10" text-anchor="middle">Axial position →</text>
+</svg>`;
+  document.getElementById('orificeFlow').innerHTML = svg;
+  window._oShape = {
+    x0, x5, xPlate, xV, xR, cTop, cBot, yP, yV,
+    dPs: x => {
+      if(x < 300)  return 0.01 + 0.05*((x-x0)/(300-x0));
+      if(x < 385)  return 0.06 + 0.09*((x-300)/85);
+      if(x < 395)  return 0.15 + 0.40*((x-385)/10);
+      if(x < xV)   return 0.55 + 0.41*((x-395)/(xV-395));
+      if(x < xR)   return 0.96 - 0.36*((x-xV)/(xR-xV));
+      return 0.60;
+    },
+    vRel: x => Math.pow(R/G(x), 2)
+  };
+}
+
+const ORIF_STOPS = [
+  ['#0f2338','#0f2338'],
+  ['#0f2338','#122a42'],
+  ['#14385c','#1d7fd6'],
+  ['#1a6fb5','#8fefff'],
+  ['#14385c','#1d7fd6'],
+  ['#0f2338','#122a42'],
+  ['#0f2338','#0f2338']
+];
+
+function updateOrificeChart(hs){
+  const os = window._oShape;
+  if(!os) return;
+  const k  = flowK();
+  const k2 = k*k;
+
+  ORIF_STOPS.forEach((p,i)=>{
+    const el = document.getElementById('oVelS'+i);
+    if(el) el.setAttribute('stop-color', lerpColor(p[0], p[1], k));
+  });
+  const fill = document.getElementById('oFill');
+  if(fill) fill.setAttribute('opacity', (0.55 + 0.45*k).toFixed(2));
+
+  document.querySelectorAll('#orificeFlow .sl').forEach(el=>{
+    el.style.opacity = (0.15 + 0.80*k).toFixed(2);
+  });
+  document.querySelectorAll('#orificeFlow .jet').forEach(el=>{
+    el.style.opacity = (0.20 + 0.75*k).toFixed(2);
+  });
+
+  const lbl = document.getElementById('oFlowLbl');
+  if(lbl){
+    const Vvc = hs.Vavg * Math.pow(D_PIPE/(D_THROAT*CC_ORIFICE), 2);
+    lbl.textContent = `Q = ${state.flow.toFixed(2)} L/min   ·   V_vena = ${Vvc.toFixed(3)} m/s`;
+    lbl.setAttribute('fill', k > 0.02 ? '#ffd79a' : '#8fa3c4');
+  }
+
+  let dP='', dV='';
+  for(let x=os.x0; x<=os.x5; x+=3){
+    const P = 1 - k2*os.dPs(x);
+    const V = k*os.vRel(x);
+    dP += (x===os.x0?'M':'L')+' '+x+' '+os.yP(P).toFixed(1)+' ';
+    dV += (x===os.x0?'M':'L')+' '+x+' '+os.yV(V).toFixed(1)+' ';
+  }
+  const pC = document.getElementById('oPcurve');
+  const vC = document.getElementById('oVcurve');
+  const pF = document.getElementById('oPfill');
+  if(pC) pC.setAttribute('d', dP);
+  if(vC) vC.setAttribute('d', dV);
+  if(pF) pF.setAttribute('d', dP + ` L ${os.x5} ${os.cBot} L ${os.x0} ${os.cBot} Z`);
+}
+
+/* ==================================================================
+   PRESSURE ANALYSIS TAB
+   ================================================================== */
+let pressureBuilt = false;
+let lastPressureFlow = -999;
+
+const PZONE = {
+  venturiStart: 100, venturiEnd: 320,
+  orificeStart: 400, orificeEnd: 540,
+  elbowStart: 620, elbowEnd: 720, xEnd: 800
+};
+const TAP_POS = {
+  A: 100, B: 140, C: 180, D: 220, E: 260, F: 300,
+  G: 400, H: 440, I: 620, J: 680,
+  P0: 40, DISCH: 780
+};
+
+function regimeColor(regime){
+  if(regime === 'Laminar')      return {bg:'rgba(34,201,160,.18)',  fg:'#22c9a0', br:'rgba(34,201,160,.5)'};
+  if(regime === 'Transitional') return {bg:'rgba(255,181,71,.18)',  fg:'#ffb547', br:'rgba(255,181,71,.5)'};
+  return {bg:'rgba(255,107,157,.18)', fg:'#ff6b9d', br:'rgba(255,107,157,.5)'};
+}
+
+function buildRegimeTable(){
+  const el = document.getElementById('regimeTable');
+  el.innerHTML = `
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Section</th><th>D (mm)</th><th>V (m/s)</th>
+            <th>Re = ρVD/μ</th><th>Flow regime</th><th>V²/2g (mm)</th>
+          </tr>
+        </thead>
+        <tbody id="regimeBody"></tbody>
+      </table>
+    </div>`;
+}
+
+function updateRegimeTable(hs){
+  const tbody = document.getElementById('regimeBody');
+  if(!tbody) return;
+  const V26 = hs.Vavg;
+  const V16 = V26 * (D_PIPE/D_THROAT)**2;
+  const Vc  = V16 / CC_ORIFICE;
+  const rows = [
+    {name:'Pipe (main)',      D: D_PIPE,              V: V26},
+    {name:'Venturi throat',   D: D_THROAT,            V: V16},
+    {name:'Orifice (hole)',   D: D_THROAT,            V: V16},
+    {name:'Vena contracta',   D: D_THROAT*CC_ORIFICE, V: Vc},
+    {name:'90° elbow',        D: D_PIPE,              V: V26}
+  ];
+  tbody.innerHTML = rows.map(r=>{
+    const Re = RHO * r.V * r.D / MU;
+    let regime = Re < 2300 ? 'Laminar' : (Re < 4000 ? 'Transitional' : 'Turbulent');
+    const col = regimeColor(regime);
+    const vh = r.V*r.V/(2*G)*1000;
+    return `<tr>
+      <td>${r.name}</td>
+      <td class="num">${(r.D*1000).toFixed(2)}</td>
+      <td class="num">${r.V.toFixed(3)}</td>
+      <td class="num" style="color:var(--cyan)">${Re.toFixed(0)}</td>
+      <td><span class="regime-chip" style="background:${col.bg};color:${col.fg};border:1px solid ${col.br}">${regime}</span></td>
+      <td class="num">${vh.toFixed(2)}</td>
+    </tr>`;
+  }).join('');
+}
+
+function drawFullPressureProfile(hs){
+  const h = heads(state.flow);
+  const pts = [
+    {x: TAP_POS.P0,   H: 650,     label:'Pump'},
+    {x: TAP_POS.A,    H: h.A,     label:'A'},
+    {x: TAP_POS.B,    H: h.B,     label:'B'},
+    {x: TAP_POS.C,    H: h.C,     label:'C'},
+    {x: TAP_POS.D,    H: h.D,     label:'D'},
+    {x: TAP_POS.E,    H: h.E,     label:'E'},
+    {x: TAP_POS.F,    H: h.F,     label:'F'},
+    {x: TAP_POS.G,    H: h.G,     label:'G'},
+    {x: TAP_POS.H,    H: h.H,     label:'H'},
+    {x: TAP_POS.I,    H: h.I,     label:'I'},
+    {x: TAP_POS.J,    H: h.J,     label:'J'},
+    {x: TAP_POS.DISCH,H: h.J-10,  label:'Disch.'}
+  ];
+  const W = 960, H = 420;
+  const mL=60, mR=30, mT=25, mB=60;
+  const pw = W-mL-mR, ph = H-mT-mB;
+  const xMin = 0, xMax = PZONE.xEnd;
+  const yMin = 0, yMax = 700;
+  const X = x => mL + (x - xMin)/(xMax - xMin)*pw;
+  const Y = y => mT + ph - (y - yMin)/(yMax - yMin)*ph;
+
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" font-family="Consolas,monospace">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="#0a1220" rx="10"/>`;
+
+  const zones = [
+    {x0:PZONE.venturiStart, x1:PZONE.venturiEnd, color:'rgba(56,214,255,.10)', label:'VENTURI',  labelColor:'#38d6ff'},
+    {x0:PZONE.orificeStart, x1:PZONE.orificeEnd, color:'rgba(255,181,71,.10)', label:'ORIFICE',  labelColor:'#ffb547'},
+    {x0:PZONE.elbowStart,   x1:PZONE.elbowEnd,   color:'rgba(255,107,157,.10)',label:'90° ELBOW',labelColor:'#ff6b9d'}
+  ];
+  zones.forEach(z=>{
+    s += `<rect x="${X(z.x0)}" y="${mT}" width="${X(z.x1)-X(z.x0)}" height="${ph}" fill="${z.color}"/>`;
+    s += `<text x="${(X(z.x0)+X(z.x1))/2}" y="${mT-8}" fill="${z.labelColor}" font-size="12" font-weight="700" letter-spacing="1.6" text-anchor="middle">${z.label}</text>`;
+  });
+
+  for(let i=0;i<=5;i++){
+    const gy = mT + ph*i/5;
+    const hv = yMax - (yMax-yMin)*i/5;
+    s += `<line x1="${mL}" y1="${gy}" x2="${mL+pw}" y2="${gy}" stroke="#1b2a45" stroke-width="1"/>`;
+    s += `<text x="${mL-10}" y="${gy+3.5}" fill="#8fa3c4" font-size="10" text-anchor="end">${hv.toFixed(0)}</text>`;
+  }
+  for(let xv=0; xv<=xMax; xv+=100){
+    const gx = X(xv);
+    s += `<line x1="${gx}" y1="${mT}" x2="${gx}" y2="${mT+ph}" stroke="#1b2a45" stroke-width="1"/>`;
+    s += `<text x="${gx}" y="${mT+ph+18}" fill="#8fa3c4" font-size="10" text-anchor="middle">${xv}</text>`;
+  }
+  s += `<line x1="${mL}" y1="${mT+ph}" x2="${mL+pw}" y2="${mT+ph}" stroke="#3d5680" stroke-width="1.6"/>`;
+  s += `<line x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT+ph}" stroke="#3d5680" stroke-width="1.6"/>`;
+  s += `<text x="${mL+pw/2}" y="${H-12}" fill="#38d6ff" font-size="12" text-anchor="middle" font-weight="600">Position along apparatus  (mm)</text>`;
+  s += `<text x="16" y="${mT+ph/2}" fill="#38d6ff" font-size="12" text-anchor="middle" font-weight="600" transform="rotate(-90,16,${mT+ph/2})">Piezometric head H  (mm)</text>`;
+
+  let dCurve = '';
+  pts.forEach((p,i)=>{
+    const px = X(p.x), py = Y(p.H);
+    if(i===0) dCurve += `M ${px.toFixed(1)} ${py.toFixed(1)} `;
+    else {
+      const prev = pts[i-1];
+      const px0 = X(prev.x), py0 = Y(prev.H);
+      const cx1 = px0 + (px-px0)*0.45;
+      const cx2 = px0 + (px-px0)*0.55;
+      dCurve += `C ${cx1.toFixed(1)} ${py0.toFixed(1)}, ${cx2.toFixed(1)} ${py.toFixed(1)}, ${px.toFixed(1)} ${py.toFixed(1)} `;
+    }
+  });
+  s += `<path d="${dCurve}" fill="none" stroke="#38d6ff" stroke-width="2.6" filter="drop-shadow(0 0 4px rgba(56,214,255,.6))"/>`;
+
+  pts.forEach(p=>{
+    const px = X(p.x), py = Y(p.H);
+    const isDevice = ['C','H','J'].includes(p.label);
+    const col = isDevice ? '#ffb547' : '#38d6ff';
+    s += `<circle cx="${px}" cy="${py}" r="${isDevice?5:3.6}" fill="${col}" stroke="#0a1020" stroke-width="1.5"/>`;
+    if(['A','C','F','G','H','I','J'].includes(p.label)){
+      s += `<text x="${px}" y="${py-10}" fill="${col}" font-size="11" font-weight="700" text-anchor="middle">${p.label}</text>`;
+    }
+  });
+  s += `</svg>`;
+  document.getElementById('fullPressureProfile').innerHTML = s;
+}
+
+function drawVenturiPressure(hs){
+  const h = heads(state.flow);
+  const W=440, H=260, mL=50, mR=20, mT=30, mB=45;
+  const pw = W-mL-mR, ph = H-mT-mB;
+  const pts = [
+    {x:0, H: h.A, label:'A'}, {x:20, H: h.B, label:'B'},
+    {x:40, H: h.C, label:'C'}, {x:60, H: h.D, label:'D'},
+    {x:80, H: h.E, label:'E'}, {x:100, H: h.F, label:'F'}
+  ];
+  const yMin = Math.min(...pts.map(p=>p.H)) - 20;
+  const yMax = Math.max(...pts.map(p=>p.H)) + 20;
+  const X = x => mL + x/100*pw;
+  const Y = y => mT + ph - (y-yMin)/(yMax-yMin)*ph;
+  let d = '';
+  pts.forEach((p,i)=>{
+    const px = X(p.x), py = Y(p.H);
+    if(i===0) d += `M ${px.toFixed(1)} ${py.toFixed(1)} `;
+    else {
+      const prev = pts[i-1];
+      const cx1 = X(prev.x) + (px-X(prev.x))*0.4;
+      const cx2 = X(prev.x) + (px-X(prev.x))*0.6;
+      d += `C ${cx1.toFixed(1)} ${Y(prev.H).toFixed(1)}, ${cx2.toFixed(1)} ${py.toFixed(1)}, ${px.toFixed(1)} ${py.toFixed(1)} `;
+    }
+  });
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" font-family="Consolas,monospace">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="#0a1220" rx="8"/>`;
+  s += `<rect x="${mL}" y="${mT}" width="${pw}" height="${ph}" fill="none" stroke="#1b2a45"/>`;
+  s += `<line x1="${X(40)}" y1="${mT}" x2="${X(40)}" y2="${mT+ph}" stroke="rgba(56,214,255,.4)" stroke-width="1" stroke-dasharray="3 3"/>`;
+  s += `<text x="${X(40)}" y="${mT-8}" fill="#38d6ff" font-size="10.5" text-anchor="middle" font-weight="600">throat</text>`;
+  s += `<path d="${d}" fill="none" stroke="#38d6ff" stroke-width="2.4"/>`;
+  pts.forEach(p=>{
+    s += `<circle cx="${X(p.x)}" cy="${Y(p.H)}" r="4" fill="#38d6ff" stroke="#0a1020" stroke-width="1.4"/>`;
+    s += `<text x="${X(p.x)}" y="${Y(p.H)-8}" fill="#38d6ff" font-size="10" text-anchor="middle" font-weight="700">${p.label}</text>`;
+  });
+  s += `<text x="${mL+pw/2}" y="${H-10}" fill="#8fa3c4" font-size="10.5" text-anchor="middle">Axial position along venturi →</text>`;
+  s += `</svg>`;
+  document.getElementById('venturiPressure').innerHTML = s;
+}
+
+function drawOrificePressure(hs){
+  const h = heads(state.flow);
+  const W=440, H=260, mL=50, mR=20, mT=30, mB=45;
+  const pw = W-mL-mR, ph = H-mT-mB;
+  const pts = [
+    {x:0, H: h.G, label:'G'},
+    {x:15, H: h.G - (h.G-h.H)*0.85, label:'plate'},
+    {x:35, H: h.H, label:'H'},
+    {x:60, H: h.H + (h.G-h.H)*0.35, label:''},
+    {x:85, H: h.H + (h.G-h.H)*0.45, label:''},
+    {x:100, H: h.H + (h.G-h.H)*0.48, label:''}
+  ];
+  const yMin = Math.min(...pts.map(p=>p.H)) - 20;
+  const yMax = Math.max(...pts.map(p=>p.H)) + 20;
+  const X = x => mL + x/100*pw;
+  const Y = y => mT + ph - (y-yMin)/(yMax-yMin)*ph;
+  let d = '';
+  pts.forEach((p,i)=>{
+    const px = X(p.x), py = Y(p.H);
+    if(i===0) d += `M ${px.toFixed(1)} ${py.toFixed(1)} `;
+    else {
+      const prev = pts[i-1];
+      const cx1 = X(prev.x) + (px-X(prev.x))*0.4;
+      const cx2 = X(prev.x) + (px-X(prev.x))*0.6;
+      d += `C ${cx1.toFixed(1)} ${Y(prev.H).toFixed(1)}, ${cx2.toFixed(1)} ${py.toFixed(1)}, ${px.toFixed(1)} ${py.toFixed(1)} `;
+    }
+  });
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" font-family="Consolas,monospace">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="#0a1220" rx="8"/>`;
+  s += `<rect x="${mL}" y="${mT}" width="${pw}" height="${ph}" fill="none" stroke="#1b2a45"/>`;
+  s += `<line x1="${X(35)}" y1="${mT}" x2="${X(35)}" y2="${mT+ph}" stroke="rgba(255,181,71,.4)" stroke-width="1" stroke-dasharray="3 3"/>`;
+  s += `<text x="${X(35)}" y="${mT-8}" fill="#ffb547" font-size="10.5" text-anchor="middle" font-weight="600">vena c.</text>`;
+  s += `<rect x="${X(15)}" y="${mT}" width="${X(70)-X(15)}" height="${ph}" fill="rgba(255,107,157,.08)"/>`;
+  s += `<text x="${(X(15)+X(70))/2}" y="${mT+ph-6}" fill="#ff6b9d" font-size="10" text-anchor="middle">recirculation</text>`;
+  s += `<path d="${d}" fill="none" stroke="#ffb547" stroke-width="2.4"/>`;
+  pts.forEach(p=>{
+    if(!p.label) return;
+    s += `<circle cx="${X(p.x)}" cy="${Y(p.H)}" r="4" fill="#ffb547" stroke="#0a1020" stroke-width="1.4"/>`;
+    s += `<text x="${X(p.x)}" y="${Y(p.H)-8}" fill="#ffb547" font-size="10" text-anchor="middle" font-weight="700">${p.label}</text>`;
+  });
+  s += `<text x="${mL+pw/2}" y="${H-10}" fill="#8fa3c4" font-size="10.5" text-anchor="middle">Axial position →</text>`;
+  s += `</svg>`;
+  document.getElementById('orificePressure').innerHTML = s;
+}
+
+function drawElbowPressure(hs){
+  const h = heads(state.flow);
+  const W=960, H=200, mL=60, mR=30, mT=30, mB=45;
+  const pw = W-mL-mR, ph = H-mT-mB;
+  const pts = [
+    {x:0, H: h.H, label:'after orifice'},
+    {x:40, H: h.I, label:'I'},
+    {x:60, H: h.I - (h.I-h.J)*0.3, label:''},
+    {x:80, H: h.J, label:'J'},
+    {x:100, H: h.J, label:'discharge'}
+  ];
+  const yMin = Math.min(...pts.map(p=>p.H)) - 15;
+  const yMax = Math.max(...pts.map(p=>p.H)) + 15;
+  const X = x => mL + x/100*pw;
+  const Y = y => mT + ph - (y-yMin)/(yMax-yMin)*ph;
+  let d = '';
+  pts.forEach((p,i)=>{
+    d += (i===0?'M':'L') + ' ' + X(p.x).toFixed(1) + ' ' + Y(p.H).toFixed(1) + ' ';
+  });
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" font-family="Consolas,monospace">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="#0a1220" rx="8"/>`;
+  s += `<rect x="${mL}" y="${mT}" width="${pw}" height="${ph}" fill="none" stroke="#1b2a45"/>`;
+  s += `<rect x="${X(45)}" y="${mT}" width="${X(90)-X(45)}" height="${ph}" fill="rgba(255,107,157,.08)"/>`;
+  s += `<text x="${(X(45)+X(90))/2}" y="${mT-8}" fill="#ff6b9d" font-size="10.5" text-anchor="middle" font-weight="600">elbow</text>`;
+  s += `<path d="${d}" fill="none" stroke="#22c9a0" stroke-width="2.6"/>`;
+  pts.forEach(p=>{
+    if(!p.label) return;
+    s += `<circle cx="${X(p.x)}" cy="${Y(p.H)}" r="4" fill="#22c9a0" stroke="#0a1020" stroke-width="1.4"/>`;
+    s += `<text x="${X(p.x)}" y="${Y(p.H)-8}" fill="#22c9a0" font-size="10" text-anchor="middle" font-weight="700">${p.label}</text>`;
+  });
+  s += `<text x="${mL+pw/2}" y="${H-10}" fill="#8fa3c4" font-size="10.5" text-anchor="middle">Axial position →</text>`;
+  s += `</svg>`;
+  document.getElementById('elbowPressure').innerHTML = s;
+}
+
+function drawFlowrateEffect(){
+  const W=960, H=380, mL=70, mR=30, mT=30, mB=55;
+  const pw = W-mL-mR, ph = H-mT-mB;
+  const xMax = Q_MAX, yMax = 340;
+  const N = 60;
+  const vent=[], orif=[], elbow=[];
+  for(let i=0;i<=N;i++){
+    const q = xMax*i/N;
+    const Q = q/60000;
+    const V26 = Q/A_PIPE, V16 = Q/A_THROAT;
+    const vh26 = V26*V26/(2*G)*1000;
+    const vh16 = V16*V16/(2*G)*1000;
+    vent.push({q, h:(vh16-vh26)/(CD_VENTURI**2)});
+    orif.push({q, h:(vh16-vh26)/(CD_ORIFICE**2)});
+    elbow.push({q, h:K_TRUE*vh26 + CF*vh26});
+  }
+  const X = q => mL + q/xMax*pw;
+  const Y = h => mT + ph - Math.min(h, yMax)/yMax*ph;
+  let s = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" font-family="Consolas,monospace">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" fill="#0a1220" rx="10"/>`;
+  for(let i=0;i<=5;i++){
+    const gy = mT + ph*i/5;
+    const hv = yMax - yMax*i/5;
+    s += `<line x1="${mL}" y1="${gy}" x2="${mL+pw}" y2="${gy}" stroke="#1b2a45" stroke-width="1"/>`;
+    s += `<text x="${mL-10}" y="${gy+3.5}" fill="#8fa3c4" font-size="10" text-anchor="end">${hv.toFixed(0)}</text>`;
+  }
+  for(let i=0;i<=5;i++){
+    const gx = mL + pw*i/5;
+    const qv = xMax*i/5;
+    s += `<line x1="${gx}" y1="${mT}" x2="${gx}" y2="${mT+ph}" stroke="#1b2a45" stroke-width="1"/>`;
+    s += `<text x="${gx}" y="${mT+ph+18}" fill="#8fa3c4" font-size="10" text-anchor="middle">${qv.toFixed(1)}</text>`;
+  }
+  s += `<line x1="${mL}" y1="${mT+ph}" x2="${mL+pw}" y2="${mT+ph}" stroke="#3d5680" stroke-width="1.6"/>`;
+  s += `<line x1="${mL}" y1="${mT}" x2="${mL}" y2="${mT+ph}" stroke="#3d5680" stroke-width="1.6"/>`;
+  s += `<text x="${mL+pw/2}" y="${H-12}" fill="#38d6ff" font-size="12" text-anchor="middle" font-weight="600">Flow rate Q  (L/min)</text>`;
+  s += `<text x="16" y="${mT+ph/2}" fill="#38d6ff" font-size="12" text-anchor="middle" font-weight="600" transform="rotate(-90,16,${mT+ph/2})">Head loss Δh  (mm)</text>`;
+  function curvePath(pts){
+    let d = '';
+    pts.forEach((p,i)=>{ d += (i===0?'M':'L') + ' ' + X(p.q).toFixed(1) + ' ' + Y(p.h).toFixed(1) + ' '; });
+    return d;
+  }
+  s += `<path d="${curvePath(orif)}" fill="none" stroke="#ff6b9d" stroke-width="2.6"/>`;
+  s += `<path d="${curvePath(vent)}" fill="none" stroke="#38d6ff" stroke-width="2.6"/>`;
+  s += `<path d="${curvePath(elbow)}" fill="none" stroke="#22c9a0" stroke-width="2.6"/>`;
+  const curQ = state.flow;
+  if(curQ > 0){
+    const Q = curQ/60000;
+    const V26 = Q/A_PIPE, V16 = Q/A_THROAT;
+    const vh26 = V26*V26/(2*G)*1000, vh16 = V16*V16/(2*G)*1000;
+    const dVent = (vh16-vh26)/(CD_VENTURI**2);
+    const dOrif = (vh16-vh26)/(CD_ORIFICE**2);
+    const dElb  = K_TRUE*vh26 + CF*vh26;
+    [[dVent,'#38d6ff'],[dOrif,'#ff6b9d'],[dElb,'#22c9a0']].forEach(([h,col])=>{
+      s += `<circle cx="${X(curQ)}" cy="${Y(h)}" r="6" fill="${col}" stroke="#0a1020" stroke-width="2"/>`;
+    });
+    s += `<line x1="${X(curQ)}" y1="${mT}" x2="${X(curQ)}" y2="${mT+ph}" stroke="rgba(255,255,255,.15)" stroke-width="1.4" stroke-dasharray="4 4"/>`;
+    s += `<text x="${X(curQ)}" y="${mT-8}" fill="#eaf6ff" font-size="10.5" text-anchor="middle">Q = ${curQ.toFixed(1)} L/min</text>`;
+  }
+  s += `<g transform="translate(${mL+20},${mT+20})">
+    <rect x="0" y="0" width="200" height="66" rx="7" fill="rgba(6,14,28,.92)" stroke="#2b3d5e"/>
+    <line x1="10" y1="16" x2="30" y2="16" stroke="#ff6b9d" stroke-width="2.6"/>
+    <text x="38" y="20" fill="#ff6b9d" font-size="11">Orifice (C_d=0.63)</text>
+    <line x1="10" y1="34" x2="30" y2="34" stroke="#38d6ff" stroke-width="2.6"/>
+    <text x="38" y="38" fill="#38d6ff" font-size="11">Venturi (C_d=0.98)</text>
+    <line x1="10" y1="52" x2="30" y2="52" stroke="#22c9a0" stroke-width="2.6"/>
+    <text x="38" y="56" fill="#22c9a0" font-size="11">90° elbow (K=0.84)</text>
+  </g>`;
+  s += `<text x="${mL+pw-10}" y="${mT+20}" fill="#8fa3c4" font-size="11.5" text-anchor="end">Δh ∝ Q²  → doubling Q quadruples Δh</text>`;
+  s += `</svg>`;
+  document.getElementById('flowrateEffect').innerHTML = s;
+}
+
+function updatePressureTab(force){
+  if(!pressureBuilt) return;
+  const hs = hydroState();
+  updateRegimeTable(hs);
+  if(!force && Math.abs(state.flow - lastPressureFlow) < 0.02) return;
+  lastPressureFlow = state.flow;
+  drawFullPressureProfile(hs);
+  drawVenturiPressure(hs);
+  drawOrificePressure(hs);
+  drawElbowPressure(hs);
+  drawFlowrateEffect();
+}
+
+/* ==================================================================
+   INIT
+   ================================================================== */
+buildApparatus();
+buildManometer();
+updateManometer(heads(0));
+renderFlowTable();
+renderElbowTable();
+
+buildFlowField2D();
+buildHydroProfiles();
+buildHydroCrossSections();
+buildHydroPressure();
+buildVenturiFlow();
+buildOrificeFlow();
+hydroBuilt = true;
+
+buildRegimeTable();
+pressureBuilt = true;
+
+updateAll();
+setInterval(updateAll, 120);
+</script>
+</body>
+</html>

@@ -1,0 +1,2109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>FM26 · Flow over Weirs — 3D Virtual Lab</title>
+<style>
+:root{
+  --bg:#060c16; --panel:#0d1727; --panel2:#111e31; --line:#1d2e45;
+  --txt:#dce7f5; --mut:#7d90a8; --acc:#38bdf8; --acc2:#22d3ee;
+  --good:#34d399; --warn:#fbbf24; --bad:#f87171;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:
+    radial-gradient(900px 600px at 8% -12%, #12263f 0%, transparent 55%),
+    radial-gradient(900px 600px at 92% -5%, #0c2b3c 0%, transparent 50%),
+    var(--bg);
+  color:var(--txt);
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  font-size:14px; min-height:100vh; padding-bottom:40px;
+}
+.wrap{max-width:1560px;margin:0 auto;padding:16px}
+
+header.top{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+  padding:14px 18px;margin-bottom:14px;
+  background:linear-gradient(180deg,#101e31,#0c1626);
+  border:1px solid var(--line);border-radius:14px;
+  box-shadow:0 8px 30px rgba(0,0,0,.4);
+}
+.logo{
+  width:44px;height:44px;border-radius:11px;flex:0 0 auto;
+  background:linear-gradient(145deg,#38bdf8,#0369a1);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:15px;color:#04121f;letter-spacing:-.5px;
+  box-shadow:0 0 22px rgba(56,189,248,.35);
+}
+header.top h1{margin:0;font-size:17px;letter-spacing:.2px}
+header.top p{margin:2px 0 0;color:var(--mut);font-size:12px}
+.badges{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.badge{
+  font-size:11px;padding:5px 10px;border-radius:999px;
+  background:#0f2033;border:1px solid var(--line);color:var(--mut);
+  font-family:ui-monospace,monospace;
+}
+.badge b{color:var(--acc)}
+
+.layout{display:grid;grid-template-columns:290px minmax(0,1fr) 310px;gap:14px}
+@media(max-width:1200px){.layout{grid-template-columns:1fr}}
+
+.panel{
+  background:linear-gradient(180deg,#0e1a2b,#0b1523);
+  border:1px solid var(--line);border-radius:14px;padding:14px;
+  box-shadow:0 6px 24px rgba(0,0,0,.35);
+}
+.panel h3{
+  margin:0 0 12px;font-size:11px;letter-spacing:1.6px;text-transform:uppercase;
+  color:var(--mut);font-weight:700;display:flex;align-items:center;gap:8px;
+}
+.panel h3::after{content:'';flex:1;height:1px;background:var(--line)}
+
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg button{
+  background:#0d1a2a;border:1px solid var(--line);color:var(--mut);
+  padding:11px 6px;border-radius:10px;cursor:pointer;font-size:12.5px;
+  font-weight:600;transition:.18s;font-family:inherit;
+}
+.seg button:hover{border-color:#2b4a6b;color:#b8cbe0}
+.seg button.on{
+  background:linear-gradient(180deg,#123049,#0e2438);
+  border-color:var(--acc);color:var(--acc);
+  box-shadow:0 0 0 1px rgba(56,189,248,.25),0 0 18px rgba(56,189,248,.18) inset;
+}
+
+.sliderRow{margin-top:16px}
+.sliderLabel{display:flex;justify-content:space-between;font-size:12px;margin-bottom:8px;align-items:baseline}
+.sliderLabel b{font-family:ui-monospace,monospace;color:var(--acc);font-size:13px}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:6px;border-radius:4px;
+  background:linear-gradient(90deg,var(--acc) var(--p,50%),#1a2b40 var(--p,50%));
+  outline:none;cursor:pointer;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+  background:#e6f6ff;border:3px solid var(--acc);cursor:pointer;
+  box-shadow:0 0 12px rgba(56,189,248,.7);
+}
+input[type=range]::-moz-range-thumb{
+  width:14px;height:14px;border-radius:50%;background:#e6f6ff;
+  border:3px solid var(--acc);cursor:pointer;
+}
+.presets{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.presets button{
+  background:#0d1a2a;border:1px solid var(--line);color:var(--mut);
+  padding:7px 2px;border-radius:8px;font-size:11px;cursor:pointer;font-family:ui-monospace,monospace;
+  transition:.15s;
+}
+.presets button:hover{border-color:var(--acc);color:var(--acc)}
+
+.volRow{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}
+.volRow button{
+  background:#0d1a2a;border:1px solid var(--line);color:var(--mut);
+  padding:8px 2px;border-radius:8px;font-size:11.5px;cursor:pointer;font-family:inherit;font-weight:600;
+  transition:.15s;
+}
+.volRow button.on{background:#123049;border-color:var(--acc);color:var(--acc)}
+
+/* --- editable geometry section --- */
+.geomCard{
+  margin-top:14px;padding:11px;border-radius:10px;
+  background:linear-gradient(180deg,#0d1e31,#0a1826);
+  border:1px solid #1d3a58;
+  box-shadow:0 0 0 1px rgba(56,189,248,.06) inset;
+}
+.geomCard .gc-title{
+  font-size:10.5px;letter-spacing:1.4px;text-transform:uppercase;
+  color:#7ba8cc;font-weight:700;margin-bottom:10px;display:flex;
+  align-items:center;gap:6px;
+}
+.geomCard .gc-title::after{content:'';flex:1;height:1px;background:#1d3a58}
+.geomCard .gc-title .gc-pill{
+  background:#123049;color:#7fd6ff;font-size:9px;padding:2px 7px;border-radius:99px;
+  letter-spacing:.5px;
+}
+.geomCard input[type=range]{
+  background:linear-gradient(90deg,#22d3ee var(--p,50%),#162838 var(--p,50%));
+}
+.geomCard input[type=range]::-webkit-slider-thumb{
+  border-color:#22d3ee;box-shadow:0 0 12px rgba(34,211,238,.7);
+}
+.geomCard .sliderLabel b{color:#22d3ee}
+.geomCard .presets button:hover{border-color:#22d3ee;color:#22d3ee}
+
+.btn{
+  width:100%;padding:12px;border-radius:11px;border:1px solid var(--line);
+  background:#101f31;color:var(--txt);font-family:inherit;font-weight:700;font-size:13px;
+  cursor:pointer;transition:.18s;margin-top:10px;letter-spacing:.3px;
+}
+.btn:hover:not(:disabled){border-color:#3a6185;background:#14273c}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{
+  background:linear-gradient(180deg,#0ea5e9,#0369a1);border-color:#38bdf8;color:#04121f;
+  box-shadow:0 6px 18px rgba(14,165,233,.3);
+}
+.btn.primary:hover:not(:disabled){background:linear-gradient(180deg,#38bdf8,#0284c7)}
+.btn.ghost{background:transparent;color:var(--mut);font-weight:600;font-size:12px;padding:9px}
+.btn.ghost:hover{color:var(--bad);border-color:#5b2b2b}
+
+.stage{padding:0;overflow:hidden}
+.sceneBox{
+  position:relative;width:100%;aspect-ratio:16/10;background:#060e18;
+  border-radius:12px 12px 0 0;overflow:hidden;border-bottom:1px solid var(--line);
+}
+.sceneBox canvas{display:block;width:100%;height:100%}
+
+.hud3d{
+  position:absolute;left:12px;bottom:12px;display:flex;gap:8px;flex-wrap:wrap;
+  pointer-events:none;
+}
+.hudItem{
+  background:rgba(9,20,33,.78);border:1px solid #1e3450;border-radius:9px;
+  padding:6px 11px;backdrop-filter:blur(6px);
+}
+.hudItem span{display:block;font-size:9px;letter-spacing:1.1px;text-transform:uppercase;color:#6d86a2}
+.hudItem b{font-family:ui-monospace,monospace;font-size:13px;color:#38bdf8}
+.hudItem b.warn{color:#fbbf24}
+.hudItem b.good{color:#34d399}
+.hudItem b.acc2{color:#22d3ee}
+
+.viewBtns{
+  position:absolute;right:12px;top:12px;display:flex;gap:6px;
+}
+.viewBtns button{
+  background:rgba(9,20,33,.78);border:1px solid #1e3450;color:#7d90a8;
+  border-radius:8px;padding:6px 11px;font-size:11px;font-weight:600;cursor:pointer;
+  font-family:inherit;transition:.15s;backdrop-filter:blur(6px);
+}
+.viewBtns button:hover{border-color:#38bdf8;color:#38bdf8}
+.viewBtns button.on{background:#123049;border-color:#38bdf8;color:#38bdf8}
+
+.readouts{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:12px 14px;
+  background:#0b1523;
+}
+@media(max-width:640px){.readouts{grid-template-columns:repeat(2,1fr)}}
+.ro{background:#0d1a2a;border:1px solid var(--line);border-radius:10px;padding:9px 11px}
+.ro span{display:block;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--mut);margin-bottom:4px}
+.ro b{font-family:ui-monospace,monospace;font-size:16px;color:var(--txt);font-weight:700}
+.ro b.acc{color:var(--acc)}
+.ro b.good{color:var(--good)}
+
+.res{display:flex;justify-content:space-between;align-items:baseline;padding:9px 0;border-bottom:1px dashed #1a2a3e;font-size:12.5px}
+.res:last-child{border-bottom:none}
+.res span{color:var(--mut)}
+.res b{font-family:ui-monospace,monospace;font-size:14px;color:var(--txt)}
+.res b.acc{color:var(--acc2)}
+.res b.good{color:var(--good)}
+.res b.warn{color:var(--warn)}
+
+.note{
+  margin-top:10px;padding:10px;border-radius:9px;font-size:11.5px;line-height:1.5;
+  background:#0c1e2c;border:1px solid #17384f;color:#8fb6cf;
+}
+.note b{color:var(--acc)}
+
+.tableWrap{overflow:auto;max-height:340px;border-radius:10px;border:1px solid var(--line);margin-top:4px}
+table{border-collapse:collapse;width:100%;font-size:12px;font-family:ui-monospace,monospace}
+thead th{
+  position:sticky;top:0;background:#122032;color:var(--mut);font-weight:700;
+  padding:9px 10px;text-align:right;white-space:nowrap;font-size:10.5px;
+  letter-spacing:.6px;text-transform:uppercase;border-bottom:1px solid var(--line);z-index:2;
+}
+thead th:first-child{text-align:center}
+tbody td{padding:8px 10px;text-align:right;border-bottom:1px solid #14202f;white-space:nowrap}
+tbody td:first-child{text-align:center;color:var(--mut)}
+tbody tr:hover{background:#0f1d2e}
+tbody tr.new{animation:flash 1.4s ease-out}
+@keyframes flash{0%{background:#1b3b52}100%{background:transparent}}
+.empty{text-align:center;color:#3d5170;padding:26px;font-family:inherit;font-size:13px}
+
+.charts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:14px}
+@media(max-width:1000px){.charts{grid-template-columns:1fr}}
+.chartCard{background:#0b1523;border:1px solid var(--line);border-radius:12px;padding:6px}
+canvas.chart{width:100%;height:230px;display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="logo">FM<br>26</div>
+    <div>
+      <h1>Flow over Weirs — 3D Virtual Laboratory</h1>
+      <p>SOLTEQ® FM26 · Hydraulic Bench FM110 · Rectangular Notch &amp; 90° V-Notch · orbit / zoom the apparatus</p>
+    </div>
+    <div class="badges">
+      <div class="badge">g = <b>9.81</b> m/s²</div>
+      <div class="badge" id="badgeB">B = <b>33</b> mm</div>
+      <div class="badge" id="badgeTH">θ = <b>90</b>°</div>
+      <div class="badge" id="badgeWeir">Plate: <b>Rectangular</b></div>
+    </div>
+  </header>
+
+  <div class="layout">
+
+    <!-- ============ CONTROLS ============ -->
+    <aside class="panel">
+      <h3>Controls</h3>
+
+      <div class="seg" id="weirSeg">
+        <button data-weir="rect" class="on">▭ Rectangular</button>
+        <button data-weir="v">▽ V-Notch</button>
+      </div>
+
+      <!-- ============ EDITABLE NOTCH GEOMETRY ============ -->
+      <div class="geomCard" id="geomCard">
+        <div class="gc-title">
+          Notch specification
+          <span class="gc-pill" id="gcPill">Rectangular</span>
+        </div>
+
+        <!-- Rectangular width B -->
+        <div class="sliderRow" id="rectGeomRow" style="margin-top:0">
+          <div class="sliderLabel">
+            <span>Notch width B</span>
+            <b id="bVal">33.0 mm</b>
+          </div>
+          <input type="range" id="bSlider" min="8" max="225" step="1" value="33">
+          <div class="presets" id="bPresets">
+            <button data-b="20">20 mm</button>
+            <button data-b="33">33 mm</button>
+            <button data-b="60">60 mm</button>
+            <button data-b="120">120 mm</button>
+          </div>
+        </div>
+
+        <!-- V-notch included angle θ -->
+        <div class="sliderRow" id="vGeomRow" style="margin-top:0;display:none">
+          <div class="sliderLabel">
+            <span>Included angle θ</span>
+            <b id="thVal">90°</b>
+          </div>
+          <input type="range" id="thSlider" min="30" max="120" step="1" value="90">
+          <div class="presets" id="thPresets">
+            <button data-th="45">45°</button>
+            <button data-th="60">60°</button>
+            <button data-th="90">90°</button>
+            <button data-th="120">120°</button>
+          </div>
+        </div>
+
+        <button class="btn ghost" id="resetGeomBtn" style="margin-top:10px;font-size:11px">
+          ↺ Reset to default dimensions
+        </button>
+      </div>
+
+      <div class="sliderRow">
+        <div class="sliderLabel">
+          <span>Flow control valve → Head</span>
+          <b id="hVal">30.0 mm</b>
+        </div>
+        <input type="range" id="hSlider" min="5" max="45" step="0.5" value="30">
+        <div class="presets" id="presets">
+          <button data-h="10">10 mm</button>
+          <button data-h="20">20 mm</button>
+          <button data-h="30">30 mm</button>
+          <button data-h="40">40 mm</button>
+        </div>
+      </div>
+
+      <div class="sliderRow">
+        <div class="sliderLabel"><span>Collecting tank volume</span><b id="volVal">1.0 L</b></div>
+        <div class="volRow" id="volRow">
+          <button data-v="0.5">0.5 L</button>
+          <button data-v="1" class="on">1 L</button>
+          <button data-v="2">2 L</button>
+          <button data-v="3">3 L</button>
+        </div>
+      </div>
+
+      <div class="sliderRow">
+        <div class="sliderLabel"><span>Simulation speed</span><b id="spdVal">6×</b></div>
+        <input type="range" id="spdSlider" min="1" max="12" step="1" value="6">
+      </div>
+
+      <div class="sliderRow">
+        <div class="sliderLabel"><span>Water opacity</span><b id="opaVal">82%</b></div>
+        <input type="range" id="opaSlider" min="25" max="100" step="1" value="82">
+      </div>
+
+      <button class="btn primary" id="runBtn">▶ Run 3 Timed Trials</button>
+      <button class="btn" id="csvBtn">⤓ Export CSV</button>
+      <button class="btn ghost" id="clrBtn">✕ Clear current plate data</button>
+
+      <div class="note" id="hintBox">
+        Drag with the <b>left mouse button</b> to orbit · <b>scroll</b> to zoom · <b>right-drag</b> to pan.
+        Water is supplied to the channel and flows <b>only up to the weir plate</b>, then spills over the
+        notch and falls into the <b>volumetric collecting tank</b> below, where the collected volume
+        accumulates during each timed trial.
+      </div>
+
+      <div class="note" style="background:#101a2b;border-color:#1d3554;color:#9fc0dc">
+        <b>Velocity model</b><br>
+        Upstream: <span style="font-family:ui-monospace,monospace">v = Q / (W·h<sub>up</sub>)</span><br>
+        Crest: <span style="font-family:ui-monospace,monospace">u₀ = C<sub>v</sub>√(2gH)</span><br>
+        Downstream: <span style="font-family:ui-monospace,monospace">v = √(u₀² + 2gΔy)</span>
+      </div>
+    </aside>
+
+    <!-- ============ 3D STAGE ============ -->
+    <main class="panel stage">
+      <div class="sceneBox" id="sceneBox">
+        <div class="hud3d">
+          <div class="hudItem"><span>Tank</span><b id="hudTank">0.000 L</b></div>
+          <div class="hudItem"><span>Timer</span><b id="hudTime" class="warn">0.00 s</b></div>
+          <div class="hudItem"><span>Status</span><b id="hudStatus" class="good">STEADY</b></div>
+          <div class="hudItem"><span>v upstream</span><b id="hudVUp" class="acc2">—</b></div>
+          <div class="hudItem"><span>v crest</span><b id="hudVCrest">—</b></div>
+          <div class="hudItem"><span>v impact</span><b id="hudVImpact" class="warn">—</b></div>
+        </div>
+        <div class="viewBtns" id="viewBtns">
+          <button data-view="side">◧ Side</button>
+          <button data-view="iso" class="on">◩ 3/4</button>
+          <button data-view="front">▤ Front</button>
+          <button data-view="top">▣ Top</button>
+        </div>
+      </div>
+
+      <div class="readouts">
+        <div class="ro"><span>Head H</span><b id="roH" class="acc">0.0300 m</b></div>
+        <div class="ro"><span>Flow Q</span><b id="roQ">—</b></div>
+        <div class="ro"><span>Coefficient Cd</span><b id="roCd" class="good">—</b></div>
+        <div class="ro"><span>Data points</span><b id="roN">0</b></div>
+      </div>
+    </main>
+
+    <!-- ============ ANALYSIS ============ -->
+    <aside class="panel">
+      <h3>Analysis — <span id="resWeir" style="color:var(--acc)">Rectangular</span></h3>
+      <div class="res"><span>Data points recorded</span><b id="aN">0</b></div>
+      <div class="res"><span>Average C<sub>d</sub></span><b id="aCd" class="acc">—</b></div>
+      <div class="res"><span>Typical C<sub>d</sub> range</span><b id="aTyp" style="font-size:12px;color:var(--mut)">0.58 – 0.64</b></div>
+      <div class="res"><span>Q = k·H<sup>n</sup> : k</span><b id="aK">—</b></div>
+      <div class="res"><span>Q = k·H<sup>n</sup> : n</span><b id="aNn">—</b></div>
+      <div class="res"><span>Slope of graph</span><b id="aSlope">—</b></div>
+      <div class="res"><span>C<sub>d</sub> from slope</span><b id="aCds" class="good">—</b></div>
+      <div class="note" id="noteBox">
+        Collect at least 3 points to enable regression analysis.
+      </div>
+      <div class="note" style="background:#0e1c17;border-color:#1c3a2c;color:#87bfa3">
+        <b>Comparison</b><br>
+        Rectangular: <span id="cmpRect" style="font-family:ui-monospace,monospace">—</span><br>
+        V-Notch: <span id="cmpV" style="font-family:ui-monospace,monospace">—</span>
+      </div>
+    </aside>
+  </div>
+
+  <!-- ============ DATA TABLE ============ -->
+  <section class="panel" style="margin-top:14px">
+    <h3>Appendix A — Experimental Data Sheet (<span id="tblWeir" style="color:var(--acc)">Rectangular Notch</span>)</h3>
+    <div class="tableWrap">
+      <table id="dataTable">
+        <thead id="tblHead"></thead>
+        <tbody id="tblBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ CHARTS ============ -->
+  <section class="charts">
+    <div class="chartCard"><canvas class="chart" id="ch1"></canvas></div>
+    <div class="chartCard"><canvas class="chart" id="ch2"></canvas></div>
+    <div class="chartCard"><canvas class="chart" id="ch3"></canvas></div>
+  </section>
+
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+/* ==========================================================================
+   0. PHYSICS CONSTANTS & WEIR DEFINITIONS
+   ==========================================================================
+   VELOCITY MODEL
+   --------------
+   (A) UPSTREAM / APPROACH VELOCITY
+         v_up  =  Q / ( W · h_up )
+       with Q = Cd · K · H^n  (m³/s), W = channel width, h_up = crest + H.
+
+   (B) CREST / LAUNCH VELOCITY
+         Rectangular :  u₀     = C_v · √(2gH) · 0.86
+         V-notch     :  u₀(y₀) = C_v · √(2g(H − y₀))
+       with C_v = 0.60.
+
+   (C) DOWNSTREAM NAPPE VELOCITY (ballistic free fall)
+         v_x(t) = u₀ ;  v_y(t) = g·t ;  |v(t)| = √(u₀² + (g t)²)
+
+   (D) IMPACT VELOCITY (at the collecting-tank water surface)
+         v_impact = √(u₀² + 2g·Δy)
+
+   NOTCH SPECIFICATIONS (editable by the user via the UI)
+   ------------------------------------------------------
+       B  = rectangular notch width          [m]     (8 – 225 mm)
+       TH = V-notch included angle           [rad]   (30° – 120°)
+   Both feed directly into K:
+       K_rect = (2/3) · B · √(2g)
+       K_v    = (8/15) · √(2g) · tan(TH/2)
+   ========================================================================== */
+const $ = s => document.querySelector(s);
+
+const G  = 9.81;
+const CV = 0.60;
+
+/* ---- EDITABLE notch specifications ---- */
+let B  = 0.033;              // rectangular notch width (m)
+let TH = Math.PI / 2;        // V-notch included angle (rad)  ← 90° default
+
+/* ---- flume geometry (metres) ---- */
+const FLUME = {
+  W:      0.30,
+  xUp:   -0.62,
+  xDown:  0.00,               // channel ends at the weir plate
+  wallH:  0.32,
+  wallT:  0.018
+};
+const PLATE = {
+  th:    0.008,
+  yBot:  0.0,
+  yTop:  0.200,
+  crest: 0.140
+};
+
+/* ---- notch limits (clamped against the flume width) ---- */
+const B_MIN  = 0.008;
+const B_MAX  = Math.min(0.250, FLUME.W * 0.90);     // ≤ 225 mm
+const TH_MIN = 30  * Math.PI / 180;
+const TH_MAX = 120 * Math.PI / 180;
+
+/* ---- volumetric collecting tank ---- */
+const TANK = {
+  x0:  0.020, x1: 0.300,
+  z0: -0.060, z1: 0.060,
+  yFloor: -0.220, yTop: 0.020,
+  wallT: 0.006
+};
+TANK.area      = (TANK.x1 - TANK.x0) * (TANK.z1 - TANK.z0);
+TANK.cx        = (TANK.x0 + TANK.x1) / 2;
+TANK.cz        = 0;
+TANK.depth     = TANK.yTop - TANK.yFloor;
+TANK.capacityL = TANK.area * TANK.depth * 1000;
+
+function tankWaterY(volL){
+  const v = Math.min(Math.max(volL, 0), TANK.capacityL);
+  return TANK.yFloor + (v / 1000) / TANK.area;
+}
+
+/* --- WEIRS uses GETTERS so K auto-recomputes when B or TH change --- */
+const WEIRS = {
+  rect: {
+    label:'Rectangular Notch', short:'Rectangular',
+    get K(){ return (2/3) * B * Math.sqrt(2*G); },
+    n: 1.5, CdTrue: 0.62,
+    hMin:0.005, hMax:0.045,
+    sheetFrac: 0.72,
+    cdTypical:[0.58,0.64],
+    expo: 2/3
+  },
+  v: {
+    label:'V-Notch', short:'V-Notch',
+    get K(){ return (8/15) * Math.sqrt(2*G) * Math.tan(TH/2); },
+    n: 2.5, CdTrue: 0.60,
+    hMin:0.005, hMax:0.040,
+    sheetFrac: 1.0,
+    cdTypical:[0.58,0.62],
+    expo: 2/5
+  }
+};
+
+const S = {
+  weir:'rect', H:0.030, volume:1, speed:6, opacity:0.82,
+  records:{ rect:[], v:[] },
+  collecting:null, tankLevel:0, t:0, lastRowIdx:-1
+};
+
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+const mean  = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : NaN;
+const lerp  = (a,b,t)=>a+(b-a)*t;
+
+function flowQ(){
+  const w = WEIRS[S.weir];
+  return w.CdTrue * w.K * Math.pow(S.H, w.n);
+}
+function upstreamVelocity(){
+  const hUp = PLATE.crest + S.H;
+  return flowQ() / (FLUME.W * hUp);
+}
+function crestVelocityRect(){
+  return CV * Math.sqrt(2 * G * S.H) * 0.86;
+}
+function crestVelocityV(y0){
+  return CV * Math.sqrt(2 * G * Math.max(S.H - y0, 0.0016));
+}
+function impactVelocity(){
+  const yTank = currentTankWaterY();
+  if (S.weir === 'rect'){
+    const u0  = crestVelocityRect();
+    const y0c = PLATE.crest + WEIRS.rect.sheetFrac * S.H * 0.5;
+    const dy  = Math.max(y0c - yTank, 0.001);
+    return Math.sqrt(u0*u0 + 2*G*dy);
+  } else {
+    const u0 = crestVelocityV(0);
+    const dy = Math.max(PLATE.crest - yTank, 0.001);
+    return Math.sqrt(u0*u0 + 2*G*dy);
+  }
+}
+function currentTankVolumeL(){ return S.collecting ? S.collecting.filled : 0; }
+function currentTankWaterY(){ return tankWaterY(currentTankVolumeL()); }
+
+function surfaceY(x, time){
+  const H  = S.H;
+  const hc = WEIRS[S.weir].sheetFrac * H;
+  const d  = Math.max(0, -x);
+  const L  = Math.max(0.018, 2.2*H);
+  const base = PLATE.crest + hc + (H - hc) * Math.exp(-d/L);
+  const amp  = 0.00022 + H*0.018;
+  const rip  = amp * ( Math.sin(x*185 + time*3.1)*0.55
+                     + Math.sin(x*97  - time*2.3)*0.45
+                     + Math.sin(x*41  + time*1.4)*0.30 );
+  return base + rip * Math.min(1, d/0.07);
+}
+
+/* ==========================================================================
+   1. RENDERER / SCENE / CAMERA
+   ========================================================================== */
+const box = document.getElementById('sceneBox');
+
+const renderer = new THREE.WebGLRenderer({ antialias:true, powerPreference:'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(box.clientWidth, box.clientHeight, false);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.08;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.domElement.style.width = '100%';
+renderer.domElement.style.height = '100%';
+box.insertBefore(renderer.domElement, box.firstChild);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x060e18);
+scene.fog = new THREE.FogExp2(0x060e18, 0.50);
+
+const camera = new THREE.PerspectiveCamera(38, box.clientWidth/box.clientHeight, 0.01, 12);
+const CAM_PRESETS = {
+  iso:   { pos:new THREE.Vector3( 0.62, 0.42, 0.60), tgt:new THREE.Vector3(0.02, 0.02, 0) },
+  side:  { pos:new THREE.Vector3( 0.02, 0.14, 0.82), tgt:new THREE.Vector3(0.00, 0.00, 0) },
+  front: { pos:new THREE.Vector3(-0.58, 0.30, 0.40), tgt:new THREE.Vector3(0.00, 0.06, 0) },
+  top:   { pos:new THREE.Vector3( 0.05, 0.92, 0.16), tgt:new THREE.Vector3(0.03, 0.00, 0) }
+};
+camera.position.copy(CAM_PRESETS.iso.pos);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.copy(CAM_PRESETS.iso.tgt);
+controls.enableDamping = true;
+controls.dampingFactor = 0.075;
+controls.minDistance = 0.28;
+controls.maxDistance = 2.6;
+controls.maxPolarAngle = Math.PI * 0.495;
+controls.update();
+
+let camAnim = null;
+function flyTo(name){
+  const p = CAM_PRESETS[name];
+  camAnim = { p0:camera.position.clone(), t0:controls.target.clone(),
+              p1:p.pos.clone(), t1:p.tgt.clone(), k:0 };
+}
+
+function makeEnvTexture(){
+  const c = document.createElement('canvas');
+  c.width = 512; c.height = 256;
+  const ctx = c.getContext('2d');
+  const g = ctx.createLinearGradient(0,0,0,256);
+  g.addColorStop(0.00,'#dceeff');
+  g.addColorStop(0.38,'#7fb6d8');
+  g.addColorStop(0.50,'#3d7799');
+  g.addColorStop(0.62,'#123049');
+  g.addColorStop(1.00,'#050b13');
+  ctx.fillStyle = g; ctx.fillRect(0,0,512,256);
+  const rg = ctx.createRadialGradient(150,52,4, 150,52,110);
+  rg.addColorStop(0,'rgba(255,255,255,1)');
+  rg.addColorStop(0.4,'rgba(200,235,255,0.45)');
+  rg.addColorStop(1,'rgba(200,235,255,0)');
+  ctx.fillStyle = rg; ctx.fillRect(0,0,512,256);
+  const rg2 = ctx.createRadialGradient(390,40,4, 390,40,80);
+  rg2.addColorStop(0,'rgba(180,225,255,0.7)');
+  rg2.addColorStop(1,'rgba(180,225,255,0)');
+  ctx.fillStyle = rg2; ctx.fillRect(0,0,512,256);
+  const tex = new THREE.CanvasTexture(c);
+  tex.mapping = THREE.EquirectangularReflectionMapping;
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+const pmrem = new THREE.PMREMGenerator(renderer);
+pmrem.compileEquirectangularShader();
+scene.environment = pmrem.fromEquirectangular(makeEnvTexture()).texture;
+
+scene.add(new THREE.HemisphereLight(0xbde4ff, 0x06101a, 0.75));
+
+const key = new THREE.DirectionalLight(0xffffff, 2.4);
+key.position.set(0.55, 0.95, 0.55);
+key.castShadow = true;
+key.shadow.mapSize.set(2048, 2048);
+key.shadow.camera.near = 0.1;
+key.shadow.camera.far  = 3.5;
+key.shadow.camera.left = -0.8;
+key.shadow.camera.right = 0.8;
+key.shadow.camera.top = 0.8;
+key.shadow.camera.bottom = -0.8;
+key.shadow.bias = -0.0008;
+scene.add(key);
+
+const rim = new THREE.DirectionalLight(0x62c8ff, 1.1);
+rim.position.set(-0.85, 0.45, -0.65);
+scene.add(rim);
+
+const fill = new THREE.DirectionalLight(0x2f7fa8, 0.55);
+fill.position.set(0.1, -0.4, 0.9);
+scene.add(fill);
+
+/* ==========================================================================
+   2. MATERIALS
+   ========================================================================== */
+const MAT = {
+  glass: new THREE.MeshPhysicalMaterial({
+    color:0xbfe6ff, metalness:0.0, roughness:0.06,
+    transparent:true, opacity:0.0, transmission:0.0,
+    side:THREE.DoubleSide, depthWrite:false, envMapIntensity:1.9,
+    clearcoat:1.0, clearcoatRoughness:0.04
+  }),
+  frame: new THREE.MeshStandardMaterial({
+    color:0x93a6bd, metalness:0.92, roughness:0.32, envMapIntensity:1.2
+  }),
+  plate: new THREE.MeshStandardMaterial({
+    color:0xb9c6d4, metalness:0.88, roughness:0.28,
+    side:THREE.DoubleSide, envMapIntensity:1.4
+  }),
+  waterTop: new THREE.MeshPhysicalMaterial({
+    color:0x2f93c8, metalness:0.0, roughness:0.055,
+    transparent:true, opacity:0.80,
+    side:THREE.DoubleSide, envMapIntensity:1.7,
+    clearcoat:1.0, clearcoatRoughness:0.05
+  }),
+  waterSide: new THREE.MeshPhysicalMaterial({
+    color:0x1c6d9d, metalness:0.0, roughness:0.16,
+    transparent:true, opacity:0.60,
+    side:THREE.DoubleSide, envMapIntensity:1.2,
+    depthWrite:false
+  }),
+  nappe: new THREE.MeshPhysicalMaterial({
+    color:0xc8f0ff, metalness:0.0, roughness:0.055,
+    transparent:true, opacity:0.80,
+    side:THREE.DoubleSide, envMapIntensity:2.0,
+    clearcoat:1.0, clearcoatRoughness:0.05,
+    emissive:0x0d3f5c, emissiveIntensity:0.55
+  }),
+  tank: new THREE.MeshPhysicalMaterial({
+    color:0xd6ecff, metalness:0.0, roughness:0.07,
+    transparent:true, opacity:0.16, transmission:0.0,
+    side:THREE.DoubleSide, depthWrite:false, envMapIntensity:2.0,
+    clearcoat:1.0, clearcoatRoughness:0.04
+  }),
+  tankWater: new THREE.MeshPhysicalMaterial({
+    color:0x2f93c8, metalness:0.0, roughness:0.075,
+    transparent:true, opacity:0.82,
+    side:THREE.DoubleSide, envMapIntensity:1.7,
+    clearcoat:1.0, clearcoatRoughness:0.06
+  }),
+  table: new THREE.MeshStandardMaterial({ color:0x0a1622, roughness:0.75, metalness:0.1 })
+};
+
+/* ==========================================================================
+   3. FLUME
+   ========================================================================== */
+const flumeGroup = new THREE.Group();
+scene.add(flumeGroup);
+
+const LEN  = FLUME.xDown - FLUME.xUp;
+const MIDX = (FLUME.xUp + FLUME.xDown) / 2;
+
+{
+  const t = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.02, 1.0), MAT.table);
+  t.position.set(-0.10, -0.240, 0);
+  t.receiveShadow = true;
+  scene.add(t);
+}
+
+for (const [lx,lz] of [[FLUME.xUp+0.09,-0.135],[FLUME.xUp+0.09,0.135],
+                       [-0.09,-0.135],[-0.09,0.135]]){
+  const leg = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.230, 0.018), MAT.frame);
+  leg.position.set(lx, -0.115, lz);
+  leg.castShadow = true;
+  scene.add(leg);
+}
+
+{
+  const f = new THREE.Mesh(
+    new THREE.BoxGeometry(LEN + FLUME.wallT*2, 0.02, FLUME.W + FLUME.wallT*2),
+    MAT.glass
+  );
+  f.position.set(MIDX, -0.01, 0);
+  f.renderOrder = 10;
+  flumeGroup.add(f);
+}
+
+function addWall(w,h,d,x,y,z){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), MAT.glass);
+  m.position.set(x,y,z);
+  m.renderOrder = 10;
+  flumeGroup.add(m);
+  return m;
+}
+const WH = FLUME.wallH;
+addWall(FLUME.wallT, WH, FLUME.W + FLUME.wallT*2, FLUME.xUp - FLUME.wallT/2, WH/2, 0);
+addWall(FLUME.wallT, WH, FLUME.W + FLUME.wallT*2, FLUME.xDown + FLUME.wallT/2, WH/2, 0);
+addWall(LEN + FLUME.wallT*2, WH, FLUME.wallT, MIDX, WH/2, -(FLUME.W/2 + FLUME.wallT/2));
+addWall(LEN + FLUME.wallT*2, WH, FLUME.wallT, MIDX, WH/2,  (FLUME.W/2 + FLUME.wallT/2));
+
+{
+  const hw = FLUME.W/2 + FLUME.wallT;
+  const x0 = FLUME.xUp - FLUME.wallT, x1 = FLUME.xDown + FLUME.wallT;
+  const corners = [
+    [x0,0,-hw],[x1,0,-hw],[x1,0,hw],[x0,0,hw],
+    [x0,WH,-hw],[x1,WH,-hw],[x1,WH,hw],[x0,WH,hw]
+  ];
+  const edges = [[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+  const segs = [];
+  for (const [a,b] of edges){
+    segs.push(new THREE.Vector3(...corners[a]), new THREE.Vector3(...corners[b]));
+  }
+  const g = new THREE.BufferGeometry().setFromPoints(segs);
+  const l = new THREE.LineSegments(g, new THREE.LineBasicMaterial({
+    color:0x9fb6cd, transparent:true, opacity:0.32
+  }));
+  scene.add(l);
+}
+
+/* ==========================================================================
+   4. WEIR PLATE  (geometry REBUILT whenever B or TH changes)
+   ========================================================================== */
+function plateShape(kind){
+  const hw = FLUME.W/2;
+  const s = new THREE.Shape();
+  s.moveTo(-hw, PLATE.yBot);
+  s.lineTo(-hw, PLATE.yTop);
+  if (kind === 'rect'){
+    const b2 = B/2;
+    s.lineTo(-b2, PLATE.yTop);
+    s.lineTo(-b2, PLATE.crest);
+    s.lineTo( b2, PLATE.crest);
+    s.lineTo( b2, PLATE.yTop);
+  } else {
+    /* V-notch: half-width at yTop = (yTop − crest) · tan(θ/2) */
+    const a = (PLATE.yTop - PLATE.crest) * Math.tan(TH/2);
+    s.lineTo(-a, PLATE.yTop);
+    s.lineTo( 0, PLATE.crest);
+    s.lineTo( a, PLATE.yTop);
+  }
+  s.lineTo(hw, PLATE.yTop);
+  s.lineTo(hw, PLATE.yBot);
+  s.closePath();
+  return s;
+}
+
+function buildPlateGeo(kind){
+  const geo = new THREE.ExtrudeGeometry(plateShape(kind), {
+    depth: PLATE.th, bevelEnabled:false, curveSegments:1
+  });
+  geo.rotateY(-Math.PI/2);
+  geo.translate(PLATE.th/2, 0, 0);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+let plateGeoRect = buildPlateGeo('rect');
+let plateGeoV    = buildPlateGeo('v');
+
+const plateMesh = new THREE.Mesh(plateGeoRect, MAT.plate);
+plateMesh.castShadow = true;
+plateMesh.receiveShadow = true;
+scene.add(plateMesh);
+
+/* rebuild both plate geometries and clear particle state */
+function rebuildWeir(){
+  const oldRect = plateGeoRect;
+  const oldV    = plateGeoV;
+  plateGeoRect = buildPlateGeo('rect');
+  plateGeoV    = buildPlateGeo('v');
+  oldRect.dispose();
+  oldV.dispose();
+  plateMesh.geometry = S.weir === 'rect' ? plateGeoRect : plateGeoV;
+
+  /* wipe in-flight particles so nothing is left over from the old geometry */
+  for (const p of parts) p.active = false;
+  freeList = [];
+  for (let i = P_TOTAL-1; i >= 0; i--) freeList.push(i);
+  spawnAcc = 0;
+
+  updateBadges();
+  refreshReadouts();
+}
+
+/* ==========================================================================
+   5. VOLUMETRIC COLLECTING TANK
+   ========================================================================== */
+const tankGroup = new THREE.Group();
+scene.add(tankGroup);
+
+const TH_W  = TANK.wallT;
+const tw    = TANK.x1 - TANK.x0;
+const td    = TANK.z1 - TANK.z0;
+const thh   = TANK.yTop - TANK.yFloor;
+const tcx   = TANK.cx;
+const tcy   = (TANK.yFloor + TANK.yTop) / 2;
+const tcz   = TANK.cz;
+
+function addTankWall(w,h,d,x,y,z){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), MAT.tank);
+  m.position.set(x,y,z);
+  m.renderOrder = 8;
+  m.castShadow = false;
+  tankGroup.add(m);
+  return m;
+}
+addTankWall(TH_W, thh, td + TH_W*2, TANK.x0 - TH_W/2, tcy, tcz);
+addTankWall(TH_W, thh, td + TH_W*2, TANK.x1 + TH_W/2, tcy, tcz);
+addTankWall(tw, thh, TH_W, tcx, tcy, TANK.z0 - TH_W/2);
+addTankWall(tw, thh, TH_W, tcx, tcy, TANK.z1 + TH_W/2);
+addTankWall(tw + TH_W*2, TH_W, td + TH_W*2, tcx, TANK.yFloor - TH_W/2, tcz);
+
+{
+  const x0 = TANK.x0 - TH_W, x1 = TANK.x1 + TH_W;
+  const yTop = TANK.yTop + TH_W/2;
+  const zA = TANK.z0 - TH_W, zB = TANK.z1 + TH_W;
+  const pts = [
+    new THREE.Vector3(x0,yTop,zA), new THREE.Vector3(x1,yTop,zA),
+    new THREE.Vector3(x1,yTop,zB), new THREE.Vector3(x0,yTop,zB),
+    new THREE.Vector3(x0,yTop,zA)
+  ];
+  const g = new THREE.BufferGeometry().setFromPoints(pts);
+  tankGroup.add(new THREE.Line(g, new THREE.LineBasicMaterial({ color:0xa9c6e0, transparent:true, opacity:0.75 })));
+}
+
+function makeScaleTexture(){
+  const c = document.createElement('canvas');
+  c.width = 96; c.height = 1024;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = 'rgba(232,246,255,0.90)';
+  ctx.fillRect(0,0,96,1024);
+  ctx.fillStyle = '#0a2233';
+  const totalMM = Math.round(TANK.depth*1000);
+  for (let mm = 0; mm <= totalMM; mm += 5){
+    const y = 1024 - (mm/totalMM)*1024;
+    const big = (mm % 25 === 0);
+    ctx.fillRect(0, Math.max(0, y-1), big ? 52 : 28, big ? 3 : 2);
+    if (big && mm > 0 && mm < totalMM){
+      ctx.font = 'bold 21px monospace';
+      ctx.fillText(String(mm), 56, Math.min(1014, y + 7));
+    }
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+{
+  const scaleMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.034, TANK.depth),
+    new THREE.MeshBasicMaterial({ map: makeScaleTexture(), transparent:true, side:THREE.DoubleSide })
+  );
+  scaleMesh.position.set(TANK.x0 + 0.032, (TANK.yFloor + TANK.yTop)/2,
+                         TANK.z1 + TH_W + 0.0012);
+  tankGroup.add(scaleMesh);
+}
+
+const tankWaterMesh = new THREE.Mesh(new THREE.BoxGeometry(1,1,1), MAT.tankWater);
+tankWaterMesh.renderOrder = 3;
+tankWaterMesh.visible = false;
+scene.add(tankWaterMesh);
+
+const TANK_NX = 26, TANK_NZ = 12;
+const tankSurfGeo = new THREE.PlaneGeometry(1, 1, TANK_NX, TANK_NZ);
+tankSurfGeo.rotateX(-Math.PI/2);
+const tankSurfPos  = tankSurfGeo.attributes.position;
+const tankSurfBase = tankSurfPos.array.slice();
+const tankSurfMesh = new THREE.Mesh(tankSurfGeo, MAT.waterTop);
+tankSurfMesh.renderOrder = 4;
+tankSurfMesh.visible = false;
+scene.add(tankSurfMesh);
+
+function updateTankWater(time){
+  const volL = currentTankVolumeL();
+  const y    = tankWaterY(volL);
+  const h    = Math.max(0.0008, y - TANK.yFloor);
+  const wW   = (TANK.x1 - TANK.x0) * 0.995;
+  const wD   = (TANK.z1 - TANK.z0) * 0.995;
+
+  tankWaterMesh.visible = h > 0.0015;
+  tankWaterMesh.scale.set(wW, h, wD);
+  tankWaterMesh.position.set(tcx, TANK.yFloor + h/2, tcz);
+  MAT.tankWater.opacity = S.opacity * 0.92;
+
+  tankSurfMesh.visible = h > 0.0015;
+  if (tankSurfMesh.visible){
+    tankSurfMesh.scale.set(wW, 1, wD);
+    tankSurfMesh.position.set(tcx, y, tcz);
+    const impX = IMPACT.x, impZ = IMPACT.z;
+    const a = tankSurfPos.array, b = tankSurfBase;
+    for (let i = 0; i < a.length; i += 3){
+      const lx = b[i] * wW, lz = b[i+2] * wD;
+      const wx = lx + tcx, wz = lz + tcz;
+      const r  = Math.hypot(wx - impX, wz - impZ);
+      const amp = 0.0075 * Math.exp(-r*9) * (0.45 + S.H*7);
+      const rip = amp * Math.sin(r*260 - time*24) * Math.exp(-r*2.6);
+      const slow = 0.0005 * Math.sin(wx*38 + time*1.6) * Math.sin(wz*55 - time*1.1);
+      a[i]   = lx;
+      a[i+1] = rip + slow;
+      a[i+2] = lz;
+    }
+    tankSurfPos.needsUpdate = true;
+    tankSurfGeo.computeVertexNormals();
+    MAT.waterTop.opacity = S.opacity;
+  }
+}
+
+/* ==========================================================================
+   6. UPSTREAM WATER
+   ========================================================================== */
+const NX = 56, NZ = 10, NY = 6;
+
+const upTopGeo = new THREE.PlaneGeometry(LEN * 0.998, FLUME.W * 0.995, NX, NZ);
+upTopGeo.rotateX(-Math.PI/2);
+const upTopPos  = upTopGeo.attributes.position;
+const upTopBase = upTopPos.array.slice();
+const upTopMesh = new THREE.Mesh(upTopGeo, MAT.waterTop);
+upTopMesh.position.set(MIDX, 0, 0);
+upTopMesh.renderOrder = 2;
+scene.add(upTopMesh);
+
+function makeSideGeo(len, height, nx, ny){
+  const g = new THREE.PlaneGeometry(len, height, nx, ny);
+  g.translate(0, height/2, 0);
+  return g;
+}
+const upSideGeo = makeSideGeo(LEN * 0.998, 0.30, NX, NY);
+const upSidePos  = upSideGeo.attributes.position;
+const upSideBase = upSidePos.array.slice();
+const upSideMeshA = new THREE.Mesh(upSideGeo, MAT.waterSide);
+upSideMeshA.position.set(MIDX, 0,  FLUME.W/2 * 0.998);
+upSideMeshA.renderOrder = 2;
+scene.add(upSideMeshA);
+
+const upSideGeoB  = upSideGeo.clone();
+const upSidePosB  = upSideGeoB.attributes.position;
+const upSideBaseB = upSidePosB.array.slice();
+const upSideMeshB = new THREE.Mesh(upSideGeoB, MAT.waterSide);
+upSideMeshB.position.set(MIDX, 0, -FLUME.W/2 * 0.998);
+upSideMeshB.renderOrder = 2;
+scene.add(upSideMeshB);
+
+/* ==========================================================================
+   7. NAPPE MESHES
+   ========================================================================== */
+const RN = 40;
+const RM = 6;
+function makeRectNappeGeo(){
+  const rings = RN + 1;
+  const perRing = (RM + 1) * 2;
+  const verts = new Float32Array(rings * perRing * 3);
+  const idx = [];
+  for (let i = 0; i < RN; i++){
+    for (let j = 0; j < RM; j++){
+      const a = i*perRing + j;
+      const b = i*perRing + j + 1;
+      const c = (i+1)*perRing + j + 1;
+      const d = (i+1)*perRing + j;
+      idx.push(a,b,c, a,c,d);
+      const a2=a+(RM+1), b2=b+(RM+1), c2=c+(RM+1), d2=d+(RM+1);
+      idx.push(a2,c2,b2, a2,d2,c2);
+    }
+    const s0 = i*perRing;
+    const s1 = (i+1)*perRing;
+    idx.push(s0, s0+(RM+1), s1+(RM+1), s0, s1+(RM+1), s1);
+    const e0 = i*perRing + RM;
+    const e1 = (i+1)*perRing + RM;
+    idx.push(e0, e1, e1+(RM+1), e0, e1+(RM+1), e0+(RM+1));
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+  g.setIndex(idx);
+  g.frustumCulled = false;
+  return g;
+}
+const rectNappeGeo = makeRectNappeGeo();
+const rectNappe = new THREE.Mesh(rectNappeGeo, MAT.nappe);
+rectNappe.renderOrder = 5;
+rectNappe.frustumCulled = false;
+scene.add(rectNappe);
+
+const VN = 26;
+const VT = 34;
+function makeVNappeGeo(){
+  const verts = new Float32Array((VN+1)*(VT+1)*3);
+  const idx = [];
+  for (let i = 0; i < VN; i++){
+    for (let j = 0; j < VT; j++){
+      const a = i*(VT+1) + j;
+      const b = i*(VT+1) + j + 1;
+      const c = (i+1)*(VT+1) + j + 1;
+      const d = (i+1)*(VT+1) + j;
+      idx.push(a,b,c, a,c,d);
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+  g.setIndex(idx);
+  g.frustumCulled = false;
+  return g;
+}
+const vNappeGeo = makeVNappeGeo();
+const vNappe = new THREE.Mesh(vNappeGeo, MAT.nappe);
+vNappe.renderOrder = 5;
+vNappe.frustumCulled = false;
+scene.add(vNappe);
+
+let IMPACT = { x: 0.09, z: 0, speed: 0.4 };
+
+/* ==========================================================================
+   8. NAPPE BUILDERS  (dynamic — react to changes in B, TH and H)
+   ========================================================================== */
+function updateRectNappe(){
+  const H   = S.H;
+  const frac= WEIRS.rect.sheetFrac;
+  const th0 = frac * H;
+  const y0c = PLATE.crest + th0/2;
+  const u0  = crestVelocityRect();
+
+  const yEnd = currentTankWaterY();
+  const fall = Math.max(y0c - yEnd, 0.008);
+  const tEnd = Math.sqrt(2*fall/G);
+
+  const arr = rectNappeGeo.attributes.position.array;
+  let p = 0;
+  let lastX = 0, lastV = 0;
+
+  for (let i = 0; i <= RN; i++){
+    const tt = (i/RN) * tEnd;
+    const vy = G*tt;
+    const v  = Math.hypot(u0, vy) || 1e-6;
+    const th = Math.max(0.0006, th0 * u0 / v);
+    const nx =  vy / v, ny = u0 / v;
+    const cx = PLATE.th/2 + u0*tt;
+    const cy = y0c - 0.5*G*tt*tt;
+    const ex = nx * th/2, ey = ny * th/2;
+    const uX = cx + ex, uY = cy + ey;
+    const lX = cx - ex, lY = cy - ey;
+
+    /* z-spread uses the CURRENT B */
+    for (let j = 0; j <= RM; j++){
+      const z = -B/2 + (B * j / RM);
+      arr[p++] = uX; arr[p++] = uY; arr[p++] = z;
+    }
+    for (let j = 0; j <= RM; j++){
+      const z = -B/2 + (B * j / RM);
+      arr[p++] = lX; arr[p++] = lY; arr[p++] = z;
+    }
+    if (i === RN){ lastX = cx; lastV = v; }
+  }
+
+  rectNappeGeo.attributes.position.needsUpdate = true;
+  rectNappeGeo.computeVertexNormals();
+  IMPACT = { x: lastX, z: 0, speed: lastV };
+}
+
+function updateVNappe(){
+  const H = S.H;
+  const yApex = PLATE.crest;
+
+  /* current half-angle tangent: tan(TH/2) */
+  const halfTan = Math.tan(TH/2);
+
+  const arr = vNappeGeo.attributes.position.array;
+
+  const yEnd = currentTankWaterY();
+  const fall = Math.max(yApex + H*0.5 - yEnd, 0.008);
+  const tRef = Math.sqrt(2*fall/G);
+  const tau  = tRef * 0.42;
+
+  let p = 0;
+  let bestX = 0, bestV = 0;
+
+  for (let i = 0; i <= VN; i++){
+    const u  = -1 + 2*i/VN;
+    const au = Math.abs(u);
+    const y0 = au * H;
+    /* V-notch z-spread uses the CURRENT θ  →  z = y0 · tan(θ/2)  */
+    const z0 = u * H * halfTan;
+    const head = Math.max(H - y0, 0.0018);
+    const uv = CV * Math.sqrt(2*G*head);
+
+    const startY = yApex + y0;
+    const tEnd = Math.sqrt(2 * Math.max(startY - yEnd, 0.004) / G);
+
+    for (let j = 0; j <= VT; j++){
+      const tt = (j/VT) * tEnd;
+      const x  = PLATE.th/2 + uv * tt;
+      const y  = startY - 0.5*G*tt*tt;
+      const z  = z0 * Math.exp(-tt/tau) * (1 + 0.04*Math.sin(tt*70 + S.t*4));
+      arr[p++] = x; arr[p++] = y; arr[p++] = z;
+
+      if (j === VT && au < 0.25 && x > bestX){ bestX = x; bestV = uv; }
+    }
+  }
+
+  vNappeGeo.attributes.position.needsUpdate = true;
+  vNappeGeo.computeVertexNormals();
+  IMPACT = { x: bestX, z: 0, speed: bestV };
+}
+
+/* ==========================================================================
+   9. UPSTREAM WATER SURFACE UPDATE
+   ========================================================================== */
+function updateWaterSurfaces(time){
+  const a = upTopPos.array, b = upTopBase;
+  for (let i = 0; i < a.length; i += 3){
+    const lx = b[i], lz = b[i+2];
+    const wx = lx + upTopMesh.position.x;
+    a[i]   = lx;
+    a[i+1] = surfaceY(wx, time);
+    a[i+2] = lz;
+  }
+  upTopPos.needsUpdate = true;
+  upTopGeo.computeVertexNormals();
+
+  for (const [mesh, pos, base] of [[upSideMeshA, upSidePos, upSideBase],
+                                   [upSideMeshB, upSidePosB, upSideBaseB]]){
+    const aa = pos.array;
+    for (let i = 0; i < aa.length; i += 3){
+      const lx = base[i], ly = base[i+1];
+      const wx = lx + upSideMeshA.position.x;
+      const f  = clamp(ly / 0.30, 0, 1);
+      aa[i]   = lx;
+      aa[i+1] = f * surfaceY(wx, time);
+      aa[i+2] = base[i+2];
+    }
+    pos.needsUpdate = true;
+    mesh.geometry.computeVertexNormals();
+  }
+}
+
+/* ==========================================================================
+   10. PARTICLES
+   ========================================================================== */
+const P_FLOW   = 900;
+const P_SPLASH = 500;
+const P_TOTAL  = P_FLOW + P_SPLASH;
+
+const pPos   = new Float32Array(P_TOTAL*3);
+const pSize  = new Float32Array(P_TOTAL);
+const pAlpha = new Float32Array(P_TOTAL);
+
+const pGeo = new THREE.BufferGeometry();
+pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
+pGeo.setAttribute('aSize',    new THREE.BufferAttribute(pSize, 1));
+pGeo.setAttribute('aAlpha',   new THREE.BufferAttribute(pAlpha, 1));
+
+function makeDotTexture(){
+  const c = document.createElement('canvas');
+  c.width = c.height = 64;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(32,32,0, 32,32,32);
+  g.addColorStop(0.0,'rgba(255,255,255,1)');
+  g.addColorStop(0.30,'rgba(215,245,255,0.92)');
+  g.addColorStop(0.65,'rgba(140,215,255,0.35)');
+  g.addColorStop(1.0,'rgba(120,200,255,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(32,32,32,0,Math.PI*2); ctx.fill();
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+const pMat = new THREE.ShaderMaterial({
+  uniforms: {
+    uMap:   { value: makeDotTexture() },
+    uScale: { value: 600.0 },
+    uColor:{ value: new THREE.Color(0.82, 0.96, 1.0) }
+  },
+  vertexShader: `
+    attribute float aSize;
+    attribute float aAlpha;
+    uniform float uScale;
+    varying float vAlpha;
+    void main(){
+      vAlpha = aAlpha;
+      vec4 mv = modelViewMatrix * vec4(position, 1.0);
+      gl_PointSize = max(1.0, aSize * uScale / max(-mv.z, 0.05));
+      gl_Position = projectionMatrix * mv;
+    }`,
+  fragmentShader: `
+    uniform sampler2D uMap;
+    uniform vec3 uColor;
+    varying float vAlpha;
+    void main(){
+      vec4 t = texture2D(uMap, gl_PointCoord);
+      if (t.a < 0.01) discard;
+      gl_FragColor = vec4(uColor * t.rgb, t.a * vAlpha);
+    }`,
+  transparent: true,
+  depthWrite: false,
+  blending: THREE.AdditiveBlending
+});
+
+const points = new THREE.Points(pGeo, pMat);
+points.frustumCulled = false;
+points.renderOrder = 6;
+scene.add(points);
+
+const parts = [];
+for (let i = 0; i < P_TOTAL; i++) parts.push({ active:false, kind:'flow' });
+let freeList = [];
+for (let i = P_TOTAL-1; i >= 0; i--) freeList.push(i);
+
+function grabSlot(){
+  for (let i = freeList.length-1; i >= 0; i--){
+    const id = freeList[i];
+    if (!parts[id].active){ freeList.splice(i,1); return id; }
+  }
+  for (let i = 0; i < P_TOTAL; i++) if (!parts[i].active) return i;
+  return -1;
+}
+
+function spawnFlowParticle(){
+  const id = grabSlot();
+  if (id < 0) return;
+  const p = parts[id];
+
+  p.active = true;
+  p.kind   = 'flow';
+  p.phase  = 'approach';
+  p.x = FLUME.xUp + Math.random() * 0.03;
+  p.zStart = (Math.random()-0.5) * FLUME.W * 0.85;
+
+  if (S.weir === 'rect'){
+    p.f = Math.random();
+    p.zTarget = (Math.random()-0.5) * B * 0.94;          // uses CURRENT B
+    p.z = p.zStart;
+  } else {
+    const u = Math.random()*2 - 1;
+    p.u = u;
+    p.f = Math.abs(u);
+    /* V-notch z target uses tan(θ/2) — respects editable θ */
+    p.zTarget = u * S.H * Math.tan(TH/2) * 0.96;
+    p.z = p.zStart;
+  }
+
+  const sy = surfaceY(p.x, S.t);
+  p.yStart = sy - 0.004 - Math.random() * Math.max(0.004, S.H*0.75);
+  p.y = p.yStart;
+
+  p.size  = 0.0016 + Math.random()*0.0026;
+  p.alpha = 0.35 + Math.random()*0.45;
+  p.life  = 0;
+  p.slot  = id;
+}
+
+function spawnSplash(x, y, z, n, power){
+  for (let k = 0; k < n; k++){
+    const id = grabSlot();
+    if (id < 0) return;
+    const p = parts[id];
+    p.active = true;
+    p.kind = 'splash';
+    p.x = x + (Math.random()-0.5)*0.022;
+    p.y = y + Math.random()*0.006;
+    p.z = z + (Math.random()-0.5)*0.030;
+    const ang = Math.random()*Math.PI*2;
+    const sp  = (0.10 + Math.random()*0.35) * (0.6 + power);
+    p.vx = Math.cos(ang) * sp * 0.45;
+    p.vz = Math.sin(ang) * sp * 0.85;
+    p.vy = (0.16 + Math.random()*0.55) * (0.7 + power);
+    p.life = 0;
+    p.maxLife = 0.30 + Math.random()*0.55;
+    p.size = 0.0012 + Math.random()*0.0030;
+    p.alpha = 0.55 + Math.random()*0.45;
+    p.slot = id;
+  }
+}
+
+/* ==========================================================================
+   11. PARTICLE UPDATE
+   ========================================================================== */
+let spawnAcc = 0;
+const APPROACH_VISUAL_BOOST = 40;
+
+function updateParticles(dtReal, dt){
+  const time = S.t;
+  const tankY = currentTankWaterY();
+  const inTank = (x,z) => (x > TANK.x0 - 0.01 && x < TANK.x1 + 0.01 &&
+                           Math.abs(z) < TANK.z1 + 0.01);
+
+  const vUpTrue = upstreamVelocity();
+  const vUpVis  = vUpTrue * APPROACH_VISUAL_BOOST;
+
+  const rate = 1200 + 18000 * Math.max(0, S.H - 0.005);
+  spawnAcc += rate * dtReal;
+  let guard = 0;
+  while (spawnAcc >= 1 && guard < 60){
+    spawnAcc -= 1; guard++;
+    spawnFlowParticle();
+  }
+  if (guard >= 60) spawnAcc = 0;
+
+  for (let i = 0; i < P_TOTAL; i++){
+    const p = parts[i];
+    if (!p.active){
+      pPos[i*3] = 0; pPos[i*3+1] = -5; pPos[i*3+2] = 0;
+      pAlpha[i] = 0;
+      continue;
+    }
+
+    if (p.kind === 'flow'){
+      if (p.phase === 'approach'){
+        p.x += vUpVis * dtReal;
+        const t0 = FLUME.xUp + 0.05;
+        const k  = clamp((p.x - t0) / (0 - t0), 0, 1);
+        const kk = k*k*(3-2*k);
+        p.z = lerp(p.zStart, p.zTarget, kk);
+
+        let targetY;
+        if (S.weir === 'rect'){
+          targetY = PLATE.crest + p.f * WEIRS.rect.sheetFrac * S.H;
+        } else {
+          targetY = PLATE.crest + p.f * S.H;
+        }
+        p.y = lerp(p.yStart, targetY, kk);
+
+        const sy = surfaceY(p.x, time);
+        if (p.y > sy - 0.0015) p.y = sy - 0.0015;
+
+        if (p.x >= PLATE.th/2){
+          p.phase = 'nappe';
+          p.t0 = 0;
+          p.launchY = p.y;
+          p.launchZ = p.z;
+          if (S.weir === 'rect'){
+            p.u0 = crestVelocityRect();
+          } else {
+            const y0 = p.f * S.H;
+            p.u0 = crestVelocityV(y0);
+            p.z0 = p.u * S.H * Math.tan(TH/2);
+            p.tau = 0.055;
+          }
+          p.x = PLATE.th/2;
+        }
+      } else {
+        p.t0 += dtReal;
+        const tt = p.t0;
+
+        if (S.weir === 'rect'){
+          const th0 = WEIRS.rect.sheetFrac * S.H;
+          const y0c = PLATE.crest + th0/2;
+          const vy  = G*tt;
+          const v   = Math.hypot(p.u0, vy) || 1e-6;
+          const th  = Math.max(0.0006, th0 * p.u0 / v);
+          const nx  = vy/v, ny = p.u0/v;
+          const cx  = PLATE.th/2 + p.u0*tt;
+          const cy  = y0c - 0.5*G*tt*tt;
+          const off = (p.f - 0.5) * th;
+          p.x = cx + nx*off;
+          p.y = cy + ny*off;
+        } else {
+          const y0 = p.f * S.H;
+          const startY = PLATE.crest + y0;
+          const tau = Math.max(0.03, p.tau);
+          p.x = PLATE.th/2 + p.u0*tt;
+          p.y = startY - 0.5*G*tt*tt;
+          p.z = p.launchZ * Math.exp(-tt/tau);
+        }
+
+        if (inTank(p.x, p.z) && p.y <= tankY){
+          spawnSplash(p.x, tankY, p.z,
+                      1 + (Math.random() < 0.5 ? 1 : 0),
+                      clamp(S.H/0.03, 0.4, 1.6));
+          p.active = false;
+          continue;
+        }
+        if (p.y < TANK.yFloor - 0.05){ p.active = false; continue; }
+      }
+    } else {
+      p.life += dtReal;
+      if (p.life >= p.maxLife){ p.active = false; continue; }
+      p.vy -= G * dtReal * 1.6;
+      p.x += p.vx * dtReal;
+      p.y += p.vy * dtReal;
+      p.z += p.vz * dtReal;
+      if (p.y < currentTankWaterY() - 0.012){ p.active = false; continue; }
+      p.alpha = (1 - p.life/p.maxLife) * 0.9;
+    }
+
+    pPos[i*3]   = p.x;
+    pPos[i*3+1] = p.y;
+    pPos[i*3+2] = p.z;
+    pSize[i]    = p.size;
+    pAlpha[i]   = p.alpha * (p.kind === 'splash' ? 1.0 : 0.95);
+  }
+
+  pGeo.attributes.position.needsUpdate = true;
+  pGeo.attributes.aSize.needsUpdate = true;
+  pGeo.attributes.aAlpha.needsUpdate = true;
+}
+
+/* ==========================================================================
+   12. SCENE UPDATE / RENDER LOOP
+   ========================================================================== */
+function updateScene(){
+  const isRect = S.weir === 'rect';
+  plateMesh.geometry = isRect ? plateGeoRect : plateGeoV;
+
+  rectNappe.visible = isRect;
+  vNappe.visible    = !isRect;
+
+  if (isRect) updateRectNappe();
+  else        updateVNappe();
+
+  updateWaterSurfaces(S.t);
+  updateTankWater(S.t);
+
+  MAT.waterTop.opacity  = S.opacity;
+  MAT.waterSide.opacity = S.opacity * 0.72;
+
+  const shown = currentTankVolumeL();
+  $('#hudTank').textContent = shown.toFixed(3) + ' L';
+  $('#hudTime').textContent = (S.collecting ? S.collecting.t : 0).toFixed(2) + ' s';
+  $('#hudVUp').textContent  = (upstreamVelocity() * 1000).toFixed(2) + ' mm/s';
+  const vCrest = isRect ? crestVelocityRect() : crestVelocityV(0);
+  $('#hudVCrest').textContent = vCrest.toFixed(3) + ' m/s';
+  $('#hudVImpact').textContent = impactVelocity().toFixed(3) + ' m/s';
+
+  const st = $('#hudStatus');
+  if (S.collecting){
+    st.textContent = 'RECORDING ' + (S.collecting.idx+1) + '/3';
+    st.className = 'warn';
+  } else {
+    st.textContent = 'STEADY';
+    st.className = 'good';
+  }
+}
+
+let lastT = performance.now();
+function loop(now){
+  const dtReal = Math.min(0.045, (now - lastT) / 1000);
+  lastT = now;
+  const dt = dtReal * S.speed;
+  S.t += dtReal;
+
+  if (S.collecting){
+    const c = S.collecting;
+    if (c.pause > 0){
+      c.pause -= dt;
+    } else {
+      const Q = flowQ();
+      c.filled += Q * dt * 1000;
+      c.t      += dt;
+      if (c.filled >= S.volume){
+        c.trials.push(Math.max(0.4, c.t + (Math.random() - 0.5) * 0.30));
+        c.idx++;
+        c.filled = 0; c.t = 0; c.pause = 0.45;
+        if (c.idx >= 3){
+          const tr = c.trials;
+          S.collecting = null;
+          S.tankLevel = 0;
+          finishRow(tr);
+          $('#runBtn').disabled = false;
+          $('#runBtn').textContent = '▶ Run 3 Timed Trials';
+        }
+      }
+    }
+    S.tankLevel = S.collecting ? S.collecting.filled / S.volume : 0;
+  }
+
+  updateParticles(dtReal, dt);
+  updateScene();
+
+  if (camAnim){
+    camAnim.k = Math.min(1, camAnim.k + dtReal * 2.4);
+    const e = 1 - Math.pow(1 - camAnim.k, 3);
+    camera.position.lerpVectors(camAnim.p0, camAnim.p1, e);
+    controls.target.lerpVectors(camAnim.t0, camAnim.t1, e);
+    if (camAnim.k >= 1) camAnim = null;
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(loop);
+}
+
+/* ==========================================================================
+   13. RESIZE
+   ========================================================================== */
+function onResize(){
+  const w = box.clientWidth, h = box.clientHeight;
+  if (w === 0 || h === 0) return;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  const dpr = renderer.getPixelRatio();
+  pMat.uniforms.uScale.value = (h * dpr) / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov/2)));
+  renderCharts();
+}
+window.addEventListener('resize', onResize);
+
+/* ==========================================================================
+   14. DATA HANDLING
+   ========================================================================== */
+function linreg(pts){
+  const n = pts.length;
+  if (n < 2) return null;
+  let sx=0, sy=0, sxx=0, sxy=0;
+  for (const p of pts){ sx+=p.x; sy+=p.y; sxx+=p.x*p.x; sxy+=p.x*p.y; }
+  const d = n*sxx - sx*sx;
+  if (Math.abs(d) < 1e-14) return null;
+  const m = (n*sxy - sx*sy)/d;
+  const b = (sy - m*sx)/n;
+  const my = sy/n;
+  let ssTot=0, ssRes=0;
+  for (const p of pts){ ssTot += (p.y-my)**2; ssRes += (p.y-(m*p.x+b))**2; }
+  const r2 = ssTot > 1e-14 ? 1 - ssRes/ssTot : 1;
+  return { m, b, r2 };
+}
+
+function finishRow(trials){
+  const w     = WEIRS[S.weir];
+  const Hread = S.H + (Math.random() - 0.5) * 0.0010;
+  const tavg  = mean(trials);
+  const Q     = (S.volume / 1000) / tavg;
+  const Cd    = Q / (w.K * Math.pow(Hread, w.n));
+
+  S.records[S.weir].push({
+    vol: S.volume, H: Hread,
+    trials: trials.map(v => v),
+    tavg, Q, Cd
+  });
+  S.lastRowIdx = S.records[S.weir].length - 1;
+  refreshAll();
+}
+
+function startTrials(){
+  if (S.collecting) return;
+  S.collecting = { trials: [], idx: 0, filled: 0, t: 0, pause: 0.25 };
+  $('#runBtn').disabled = true;
+  $('#runBtn').textContent = '⏱ Recording…';
+}
+
+function buildHead(){
+  const rect = S.weir === 'rect';
+  const expo = rect ? 'Q<sup>2/3</sup>' : 'Q<sup>2/5</sup>';
+  const extra = rect ? '<th>Log H</th><th>Log Q</th><th>H/B</th>' : '';
+  $('#tblHead').innerHTML = `<tr>
+    <th>#</th><th>Vol (L)</th><th>H (m)</th>
+    <th>T1 (s)</th><th>T2 (s)</th><th>T3 (s)</th><th>T<sub>avg</sub> (s)</th>
+    <th>Q (m³/s)</th><th>${expo}</th>${extra}<th>C<sub>d</sub></th>
+  </tr>`;
+  $('#tblWeir').textContent = WEIRS[S.weir].label;
+}
+
+function renderTable(){
+  const recs = S.records[S.weir];
+  const rect = S.weir === 'rect';
+  const tb = $('#tblBody');
+  if (!recs.length){
+    tb.innerHTML = `<tr><td colspan="${rect?13:10}" class="empty">No measurements yet — set a head and run three timed trials.</td></tr>`;
+    return;
+  }
+  let html = '';
+  recs.forEach((r,i)=>{
+    const expoVal = Math.pow(r.Q, WEIRS[S.weir].expo);
+    const extra = rect
+      ? `<td>${Math.log10(r.H).toFixed(2)}</td>
+         <td>${Math.log10(r.Q).toFixed(2)}</td>
+         <td>${(r.H / B).toFixed(2)}</td>`
+      : '';
+    html += `<tr class="${i===S.lastRowIdx?'new':''}">
+      <td>${i+1}</td>
+      <td>${r.vol.toFixed(1)}</td>
+      <td>${r.H.toFixed(4)}</td>
+      <td>${r.trials[0].toFixed(2)}</td>
+      <td>${r.trials[1].toFixed(2)}</td>
+      <td>${r.trials[2].toFixed(2)}</td>
+      <td>${r.tavg.toFixed(2)}</td>
+      <td>${r.Q.toExponential(3)}</td>
+      <td>${expoVal.toFixed(5)}</td>
+      ${extra}
+      <td style="color:#22d3ee;font-weight:700">${r.Cd.toFixed(3)}</td>
+    </tr>`;
+  });
+  tb.innerHTML = html;
+  S.lastRowIdx = -1;
+}
+
+function renderAnalysis(){
+  const w = WEIRS[S.weir];
+  const recs = S.records[S.weir];
+
+  $('#resWeir').textContent = w.short;
+  $('#aN').textContent = recs.length;
+  $('#aTyp').textContent = w.cdTypical[0].toFixed(2) + ' – ' + w.cdTypical[1].toFixed(2);
+
+  if (!recs.length){
+    ['aCd','aK','aNn','aSlope','aCds'].forEach(id=>$('#'+id).textContent = '—');
+    $('#noteBox').innerHTML = 'Collect at least 3 points to enable regression analysis.';
+    return;
+  }
+
+  const cds = recs.map(r=>r.Cd);
+  const avgCd = mean(cds);
+  $('#aCd').textContent = avgCd.toFixed(3);
+
+  if (recs.length >= 2){
+    const logPts = recs.map(r=>({x: Math.log10(r.H), y: Math.log10(r.Q)}));
+    const lr = linreg(logPts);
+    if (lr){
+      const k = Math.pow(10, lr.b);
+      const n = lr.m;
+      $('#aK').textContent = k.toExponential(4);
+      $('#aNn').textContent = n.toFixed(4);
+      $('#noteBox').innerHTML =
+        `Empirical relation: <b>Q = ${k.toExponential(3)} · H<sup>${n.toFixed(3)}</sup></b><br>
+         Theoretical exponent n = <b>${w.n}</b> · R² = <b>${lr.r2.toFixed(4)}</b>`;
+    }
+    const pPts = recs.map(r=>({x: r.H, y: Math.pow(r.Q, w.expo)}));
+    const pr = linreg(pPts);
+    if (pr){
+      const a = pr.m;
+      const kFromSlope = Math.pow(a, 1 / w.expo);
+      $('#aSlope').textContent = a.toFixed(4);
+      $('#aCds').textContent = (kFromSlope / w.K).toFixed(3);
+    }
+  } else {
+    $('#aK').textContent = '—';
+    $('#aNn').textContent = '—';
+    $('#aSlope').textContent = '—';
+    $('#aCds').textContent = '—';
+  }
+
+  const rAvg = S.records.rect.length ? mean(S.records.rect.map(r=>r.Cd)) : null;
+  const vAvg = S.records.v.length    ? mean(S.records.v.map(r=>r.Cd))    : null;
+  $('#cmpRect').textContent = rAvg ? rAvg.toFixed(3) + ` (n=${S.records.rect.length})` : 'no data';
+  $('#cmpV').textContent    = vAvg ? vAvg.toFixed(3) + ` (n=${S.records.v.length})`    : 'no data';
+}
+
+function refreshReadouts(){
+  const w = WEIRS[S.weir];
+  const Q = flowQ();
+  $('#roH').textContent  = S.H.toFixed(4) + ' m';
+  $('#roQ').textContent  = Q.toExponential(3) + ' m³/s';
+  $('#roCd').textContent = w.CdTrue.toFixed(3) + ' (true)';
+  $('#roN').textContent  = S.records[S.weir].length;
+}
+
+function refreshAll(){
+  buildHead();
+  renderTable();
+  renderAnalysis();
+  renderCharts();
+  refreshReadouts();
+  updateBadges();
+}
+
+function updateBadges(){
+  const badgeB  = document.getElementById('badgeB');
+  const badgeTH = document.getElementById('badgeTH');
+  if (badgeB)  badgeB.innerHTML  = 'B = <b>' + (B*1000).toFixed(0) + '</b> mm';
+  if (badgeTH) badgeTH.innerHTML = 'θ = <b>' + Math.round(TH*180/Math.PI) + '</b>°';
+  $('#badgeWeir').innerHTML = 'Plate: <b>' + WEIRS[S.weir].short + '</b>';
+}
+
+/* ==========================================================================
+   15. CHARTS
+   ========================================================================== */
+function drawChart(cv, cfg){
+  const dpr = window.devicePixelRatio || 1;
+  const W = cv.clientWidth || 320, H = cv.clientHeight || 230;
+  if (W === 0 || H === 0) return;
+  if (cv.width !== Math.round(W*dpr) || cv.height !== Math.round(H*dpr)){
+    cv.width  = Math.round(W*dpr);
+    cv.height = Math.round(H*dpr);
+  }
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle = '#0b1523'; ctx.fillRect(0,0,W,H);
+
+  ctx.fillStyle = '#9fb3c8';
+  ctx.font = '700 12px ui-sans-serif,system-ui,sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(cfg.title, W/2, 18);
+
+  const P = {l:58, r:18, t:32, b:40};
+  const pw = W-P.l-P.r, ph = H-P.t-P.b;
+  const pts = cfg.points;
+
+  if (!pts.length){
+    ctx.fillStyle = '#33475f';
+    ctx.font = '12px ui-sans-serif,system-ui,sans-serif';
+    ctx.fillText('no data', W/2, P.t + ph/2);
+    return;
+  }
+
+  let xs = pts.map(p=>p.x), ys2 = pts.map(p=>p.y);
+  let xmin = Math.min(...xs), xmax = Math.max(...xs);
+  let ymin = Math.min(...ys2), ymax = Math.max(...ys2);
+  if (xmax-xmin < 1e-9){ xmin -= 0.005; xmax += 0.005; }
+  if (ymax-ymin < 1e-9){ ymin -= 0.001; ymax += 0.001; }
+  const xpad = (xmax-xmin)*0.12, ypad = (ymax-ymin)*0.14;
+  xmin -= xpad; xmax += xpad; ymin -= ypad; ymax += ypad;
+
+  const X = v => P.l + (v - xmin)/(xmax-xmin)*pw;
+  const Y = v => P.t + ph - (v - ymin)/(ymax-ymin)*ph;
+
+  ctx.strokeStyle = '#152438'; ctx.lineWidth = 1;
+  ctx.font = '10px ui-monospace,monospace'; ctx.fillStyle = '#5b7590';
+
+  const NT = 5;
+  ctx.textAlign = 'right';
+  for (let i=0;i<=NT;i++){
+    const v = ymin + (ymax-ymin)*i/NT;
+    const y = Y(v);
+    ctx.beginPath(); ctx.moveTo(P.l, y); ctx.lineTo(P.l+pw, y); ctx.stroke();
+    ctx.fillText(cfg.yfmt(v), P.l-7, y+3.5);
+  }
+  ctx.textAlign = 'center';
+  for (let i=0;i<=NT;i++){
+    const v = xmin + (xmax-xmin)*i/NT;
+    const x = X(v);
+    ctx.beginPath(); ctx.moveTo(x, P.t); ctx.lineTo(x, P.t+ph); ctx.stroke();
+    ctx.fillText(cfg.xfmt(v), x, P.t+ph+16);
+  }
+
+  ctx.strokeStyle = '#3a5471'; ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(P.l, P.t); ctx.lineTo(P.l, P.t+ph); ctx.lineTo(P.l+pw, P.t+ph);
+  ctx.stroke();
+
+  ctx.fillStyle = '#7d90a8';
+  ctx.font = '11px ui-monospace,monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText(cfg.xlabel, P.l + pw/2, H - 6);
+  ctx.save();
+  ctx.translate(13, P.t + ph/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText(cfg.ylabel, 0, 0);
+  ctx.restore();
+
+  if (cfg.fit && pts.length >= 2){
+    const r = linreg(pts);
+    if (r){
+      const y1 = r.m*xmin + r.b, y2 = r.m*xmax + r.b;
+      ctx.save();
+      ctx.beginPath(); ctx.rect(P.l, P.t, pw, ph); ctx.clip();
+      ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 2;
+      ctx.setLineDash([6,4]);
+      ctx.beginPath();
+      ctx.moveTo(X(xmin), Y(y1)); ctx.lineTo(X(xmax), Y(y2));
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+
+      ctx.textAlign = 'right';
+      ctx.font = '600 11px ui-monospace,monospace';
+      ctx.fillStyle = '#fbbf24';
+      const sign = r.b >= 0 ? '+' : '−';
+      ctx.fillText(`${cfg.ysym} = ${r.m.toFixed(3)}${cfg.xsym} ${sign} ${Math.abs(r.b).toFixed(4)}`,
+                   W - P.r - 4, P.t + 14);
+      ctx.fillStyle = '#5b7590';
+      ctx.fillText(`R² = ${r.r2.toFixed(4)}`, W - P.r - 4, P.t + 29);
+    }
+  }
+
+  if (cfg.meanLine){
+    const mv = mean(pts.map(p=>p.y));
+    const y = Y(mv);
+    ctx.strokeStyle = '#34d399'; ctx.lineWidth = 1.6;
+    ctx.setLineDash([5,5]);
+    ctx.beginPath(); ctx.moveTo(P.l, y); ctx.lineTo(P.l+pw, y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.textAlign = 'right';
+    ctx.font = '600 11px ui-monospace,monospace';
+    ctx.fillStyle = '#34d399';
+    ctx.fillText(`mean = ${mv.toFixed(3)}`, W - P.r - 4, y - 7);
+  }
+
+  pts.forEach(p=>{
+    const x = X(p.x), y = Y(p.y);
+    ctx.beginPath(); ctx.arc(x, y, 5.2, 0, Math.PI*2);
+    ctx.fillStyle = 'rgba(56,189,248,0.22)'; ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, 3.2, 0, Math.PI*2);
+    ctx.fillStyle = '#38bdf8'; ctx.fill();
+    ctx.strokeStyle = '#e6f6ff'; ctx.lineWidth = 1.2; ctx.stroke();
+  });
+}
+
+function renderCharts(){
+  const w = WEIRS[S.weir];
+  const recs = S.records[S.weir];
+  const rect = S.weir === 'rect';
+  const expo = w.expo;
+
+  const pts1 = recs.map(r=>({x: r.H, y: Math.pow(r.Q, expo)}));
+  const pts2 = recs.map(r=>({x: Math.log10(r.H), y: Math.log10(r.Q)}));
+  const pts3 = recs.map(r=>({x: r.H, y: r.Cd}));
+
+  drawChart($('#ch1'), {
+    title: rect ? 'Q^(2/3)  vs  H' : 'Q^(2/5)  vs  H',
+    points: pts1, fit: true,
+    xsym: 'H', ysym: rect ? 'Q^(2/3)' : 'Q^(2/5)',
+    xlabel: 'H (m)', ylabel: rect ? 'Q^0.667' : 'Q^0.4',
+    xfmt: v => v.toFixed(3), yfmt: v => v.toFixed(4)
+  });
+  drawChart($('#ch2'), {
+    title: 'Log Q  vs  Log H',
+    points: pts2, fit: true,
+    xsym: 'logH', ysym: 'logQ',
+    xlabel: 'log H', ylabel: 'log Q',
+    xfmt: v => v.toFixed(2), yfmt: v => v.toFixed(2)
+  });
+  drawChart($('#ch3'), {
+    title: 'Cd  vs  H',
+    points: pts3, fit: false, meanLine: true,
+    xlabel: 'H (m)', ylabel: 'Cd',
+    xfmt: v => v.toFixed(3), yfmt: v => v.toFixed(3)
+  });
+}
+
+/* ==========================================================================
+   16. UI EVENTS
+   ========================================================================== */
+function setSliderFill(input){
+  const p = (input.value - input.min) / (input.max - input.min) * 100;
+  input.style.setProperty('--p', p + '%');
+}
+
+document.querySelectorAll('#viewBtns button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('#viewBtns button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    flyTo(b.dataset.view);
+  });
+});
+
+/* --- weir type switching (also toggles the geometry control rows) --- */
+function setGeomRows(){
+  $('#rectGeomRow').style.display = S.weir === 'rect' ? 'block' : 'none';
+  $('#vGeomRow').style.display    = S.weir === 'v'    ? 'block' : 'none';
+  $('#gcPill').textContent = S.weir === 'rect' ? 'Rectangular' : 'V-Notch';
+}
+
+document.querySelectorAll('#weirSeg button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    if (S.collecting) return;
+    document.querySelectorAll('#weirSeg button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    S.weir = b.dataset.weir;
+    const w = WEIRS[S.weir];
+    S.H = clamp(S.H, w.hMin, w.hMax);
+    const sl = $('#hSlider');
+    sl.min = w.hMin*1000; sl.max = w.hMax*1000;
+    sl.value = S.H*1000;
+    setSliderFill(sl);
+    $('#hVal').textContent = (S.H*1000).toFixed(1) + ' mm';
+
+    setGeomRows();
+
+    for (const p of parts) p.active = false;
+    freeList = [];
+    for (let i = P_TOTAL-1; i >= 0; i--) freeList.push(i);
+    spawnAcc = 0;
+
+    refreshAll();
+  });
+});
+
+/* --- EDITABLE: rectangular notch width B --- */
+const bSlider = $('#bSlider');
+bSlider.min   = (B_MIN*1000).toFixed(0);
+bSlider.max   = (B_MAX*1000).toFixed(0);
+bSlider.value = (B*1000).toFixed(0);
+
+bSlider.addEventListener('input', ()=>{
+  B = clamp(parseFloat(bSlider.value)/1000, B_MIN, B_MAX);
+  $('#bVal').textContent = (B*1000).toFixed(1) + ' mm';
+  setSliderFill(bSlider);
+  rebuildWeir();
+});
+setSliderFill(bSlider);
+$('#bVal').textContent = (B*1000).toFixed(1) + ' mm';
+
+document.querySelectorAll('#bPresets button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    let mm = parseFloat(b.dataset.b);
+    mm = clamp(mm, B_MIN*1000, B_MAX*1000);
+    B = mm/1000;
+    bSlider.value = mm.toFixed(0);
+    setSliderFill(bSlider);
+    $('#bVal').textContent = mm.toFixed(1) + ' mm';
+    rebuildWeir();
+  });
+});
+
+/* --- EDITABLE: V-notch included angle θ --- */
+const thSlider = $('#thSlider');
+thSlider.min   = (TH_MIN*180/Math.PI).toFixed(0);
+thSlider.max   = (TH_MAX*180/Math.PI).toFixed(0);
+thSlider.value = (TH*180/Math.PI).toFixed(0);
+
+thSlider.addEventListener('input', ()=>{
+  const deg = parseFloat(thSlider.value);
+  TH = clamp(deg*Math.PI/180, TH_MIN, TH_MAX);
+  $('#thVal').textContent = deg.toFixed(0) + '°';
+  setSliderFill(thSlider);
+  rebuildWeir();
+});
+setSliderFill(thSlider);
+
+document.querySelectorAll('#thPresets button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    let deg = parseFloat(b.dataset.th);
+    deg = clamp(deg, TH_MIN*180/Math.PI, TH_MAX*180/Math.PI);
+    TH = deg*Math.PI/180;
+    thSlider.value = deg.toFixed(0);
+    setSliderFill(thSlider);
+    $('#thVal').textContent = deg.toFixed(0) + '°';
+    rebuildWeir();
+  });
+});
+
+/* --- reset geometry to defaults --- */
+$('#resetGeomBtn').addEventListener('click', ()=>{
+  B  = 0.033;
+  TH = Math.PI/2;
+  bSlider.value = 33;
+  thSlider.value = 90;
+  setSliderFill(bSlider);
+  setSliderFill(thSlider);
+  $('#bVal').textContent  = '33.0 mm';
+  $('#thVal').textContent = '90°';
+  rebuildWeir();
+});
+
+setGeomRows();
+
+/* --- head slider --- */
+const hSlider = $('#hSlider');
+hSlider.addEventListener('input', ()=>{
+  S.H = parseFloat(hSlider.value)/1000;
+  $('#hVal').textContent = (S.H*1000).toFixed(1) + ' mm';
+  setSliderFill(hSlider);
+  refreshReadouts();
+});
+setSliderFill(hSlider);
+
+document.querySelectorAll('#presets button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    const w = WEIRS[S.weir];
+    let mm = parseFloat(b.dataset.h);
+    mm = clamp(mm, w.hMin*1000, w.hMax*1000);
+    S.H = mm/1000;
+    hSlider.value = mm;
+    setSliderFill(hSlider);
+    $('#hVal').textContent = mm.toFixed(1) + ' mm';
+    refreshReadouts();
+  });
+});
+
+document.querySelectorAll('#volRow button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    if (S.collecting) return;
+    document.querySelectorAll('#volRow button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    S.volume = parseFloat(b.dataset.v);
+    $('#volVal').textContent = S.volume.toFixed(1) + ' L';
+  });
+});
+
+const spd = $('#spdSlider');
+spd.addEventListener('input', ()=>{
+  S.speed = parseInt(spd.value,10);
+  $('#spdVal').textContent = S.speed + '×';
+  setSliderFill(spd);
+});
+setSliderFill(spd);
+
+const opa = $('#opaSlider');
+opa.addEventListener('input', ()=>{
+  S.opacity = parseInt(opa.value,10) / 100;
+  $('#opaVal').textContent = opa.value + '%';
+  setSliderFill(opa);
+});
+setSliderFill(opa);
+
+$('#runBtn').addEventListener('click', startTrials);
+
+$('#clrBtn').addEventListener('click', ()=>{
+  if (S.collecting) return;
+  S.records[S.weir] = [];
+  S.tankLevel = 0;
+  refreshAll();
+});
+
+$('#csvBtn').addEventListener('click', ()=>{
+  const recs = S.records[S.weir];
+  if (!recs.length){ alert('No data to export for this plate.'); return; }
+  const rect = S.weir === 'rect';
+  let head = ['No','Volume(L)','H(m)','T1(s)','T2(s)','T3(s)','Tavg(s)','Q(m3/s)',
+              rect ? 'Q^(2/3)' : 'Q^(2/5)'];
+  if (rect) head = head.concat(['logH','logQ','H/B']);
+  head.push('Cd');
+  const lines = [head.join(',')];
+  recs.forEach((r,i)=>{
+    const row = [i+1, r.vol, r.H.toFixed(5),
+                 r.trials[0].toFixed(2), r.trials[1].toFixed(2), r.trials[2].toFixed(2),
+                 r.tavg.toFixed(3), r.Q.toExponential(6),
+                 Math.pow(r.Q, WEIRS[S.weir].expo).toFixed(6)];
+    if (rect) row.push(Math.log10(r.H).toFixed(4), Math.log10(r.Q).toFixed(4), (r.H/B).toFixed(4));
+    row.push(r.Cd.toFixed(4));
+    lines.push(row.join(','));
+  });
+  const blob = new Blob([lines.join('\n')], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `FM26_${S.weir === 'rect' ? 'Rectangular' : 'VNotch'}_data.csv`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+/* ==========================================================================
+   17. BOOT
+   ========================================================================== */
+(function init(){
+  refreshAll();
+  onResize();
+  updateScene();
+  requestAnimationFrame(loop);
+  setTimeout(onResize, 60);
+})();
+</script>
+</body>
+</html>
